@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "hintSets": [
+    {
+      "id": "addition_bis_10_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Schau dir beide Zahlen genau an und starte mit der groesseren Zahl."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Zaehle die kleinere Zahl Schritt fuer Schritt dazu."
+        },
+        {
+          "level": 3,
+          "title": "Dritter Tipp",
+          "text": "Wenn du moechtest, nutze deine Finger oder Punkte im Kopf, bis beide Mengen zusammen sind."
+        }
+      ]
+    },
+    {
+      "id": "zahlen_bis_10_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Zaehle die Punkte langsam von links nach rechts."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Bilde kleine Gruppen, dann musst du nicht jeden Punkt einzeln suchen."
+        }
+      ]
+    },
+    {
+      "id": "buchstaben_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Sprich das Wort lautlos mit und hoere auf den ersten Laut."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Vergleiche den Anfang mit den Antwortbuchstaben."
+        }
+      ]
+    },
+    {
+      "id": "silben_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Sprich das Wort langsam."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Klatsche bei jedem Wortteil einmal mit."
+        }
+      ]
+    },
+    {
+      "id": "muster_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Suche die Zeichen, die sich wiederholen."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Lies die Folge von vorne und pruefe, welches Zeichen als naechstes passt."
+        }
+      ]
+    }
+  ]
+}
