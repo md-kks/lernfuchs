@@ -12,41 +12,51 @@ class LernFuchsWorldGame extends FlameGame {
 
   LernFuchsWorldGame({required this.onQuestNodeTapped});
 
-  static const questNodes = [
+  static final questNodes = [
     WorldQuestNode(
-      id: 'waldeingang',
+      id: 'prolog',
       mapPosition: WorldMapBackground.nodePositions[0],
       state: QuestNodeState.current,
       type: QuestNodeType.start,
       label: 'Waldeingang',
+      questId: 'prolog_ovas_ruf',
+      subtitle: 'Prolog im Flüsterwald',
     ),
     WorldQuestNode(
-      id: 'lichtung',
+      id: 'zahlenpfad',
       mapPosition: WorldMapBackground.nodePositions[1],
       state: QuestNodeState.completed,
       type: QuestNodeType.clearing,
       label: 'Lichtung',
+      questId: 'main_zahlenpfad',
+      subtitle: 'Hauptquest: Zahlen bis 10',
     ),
     WorldQuestNode(
-      id: 'alter_baum',
+      id: 'buchstabenhain',
       mapPosition: WorldMapBackground.nodePositions[2],
       state: QuestNodeState.available,
       type: QuestNodeType.tree,
       label: 'Alter Baum',
+      questId: 'main_buchstabenhain',
+      subtitle: 'Hauptquest: Buchstaben',
     ),
     WorldQuestNode(
-      id: 'bruecke',
+      id: 'silbenquelle',
       mapPosition: WorldMapBackground.nodePositions[3],
       state: QuestNodeState.available,
       type: QuestNodeType.bridge,
       label: 'Brücke',
+      questId: 'side_silbenquelle',
+      subtitle: 'Nebenquest: Silben',
     ),
     WorldQuestNode(
-      id: 'waldsee',
+      id: 'musterlichtung',
       mapPosition: WorldMapBackground.nodePositions[4],
       state: QuestNodeState.locked,
       type: QuestNodeType.lake,
       label: 'Waldsee',
+      questId: 'side_musterlichtung',
+      subtitle: 'Nebenquest: Muster',
     ),
   ];
 

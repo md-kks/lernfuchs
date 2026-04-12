@@ -10,6 +10,8 @@ class WorldQuestNode {
   final QuestNodeState state;
   final QuestNodeType type;
   final String label;
+  final String? questId;
+  final String subtitle;
 
   const WorldQuestNode({
     required this.id,
@@ -17,9 +19,9 @@ class WorldQuestNode {
     required this.state,
     required this.type,
     required this.label,
+    this.questId,
+    this.subtitle = '',
   });
 
-  String? get questId => null;
   String get title => label;
-  String get subtitle => '';
 }

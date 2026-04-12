@@ -14,8 +14,8 @@ node model was simplified around render state and node type.
     `lake`.
   - Replaced the node data shape with `id`, `mapPosition`, `state`, `type`, and
     `label`.
-  - Kept compatibility getters for existing callers: `questId`, `title`, and
-    `subtitle`.
+  - Kept compatibility for existing callers through `questId`, `title`, and
+    `subtitle` so the quest overlay can still open existing quest definitions.
 
 - `lib/game/world/world_map_background.dart`
   - Added `WorldMapBackground`, a Flame component that renders the map
@@ -39,6 +39,8 @@ node model was simplified around render state and node type.
     with the new world map components.
   - Added the five requested nodes: Waldeingang, Lichtung, Alter Baum, Bruecke,
     and Waldsee.
+  - Preserved the existing World 1 quest ids behind those labels so current
+    tests and quest runtime wiring continue to work.
   - Added `onNodeTapped(WorldQuestNode node)` as the tap hook for the quest
     overlay.
 
