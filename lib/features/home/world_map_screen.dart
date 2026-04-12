@@ -7,8 +7,8 @@ import '../../game/dialogue/dialogue_definition_loader.dart';
 import '../../game/dialogue/dialogue_overlay.dart';
 import '../../game/dialogue/hint_definition.dart';
 import '../../game/dialogue/hint_definition_loader.dart';
-import '../exercise/learning_challenge_overlay.dart';
 import '../exercise/learning_session_mode.dart';
+import '../quest/forest_quest_overlay.dart';
 import '../../game/quest/quest_definition.dart';
 import '../../game/quest/quest_definition_loader.dart';
 import '../../game/quest/quest_runtime.dart';
@@ -81,7 +81,6 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen> {
     final runtime = _questRuntime;
     final questId = questNode.questId;
     if (runtime == null || questId == null) {
-      setState(() => _selectedQuestNode = questNode);
       return;
     }
 
@@ -220,13 +219,12 @@ class _QuestOverlay extends StatelessWidget {
         runtime != null &&
         step?.type == QuestStepType.learningChallenge) {
       final hintSetId = step?.hintSetId;
-      return LearningChallengeOverlay(
+      return ForestQuestOverlay(
         key: ValueKey('${quest.id}-$challengeAttempt'),
-        title: step?.title ?? quest.title,
-        request: runtime.createLearningRequest(quest.id),
-        mode: LearningSessionMode.questSingle,
-        message: feedback,
-        dialogueLibrary: dialogueLibrary,
+        questNode: questNode,
+        quest: quest,
+        runtime: runtime,
+        feedback: feedback,
         hintSet: hintSetId == null ? null : hintLibrary?.hintSet(hintSetId),
         onCompleted: onChallengeCompleted,
         onClose: onClose,

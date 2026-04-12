@@ -14,7 +14,7 @@ class LernFuchsWorldGame extends FlameGame {
 
   static final questNodes = [
     WorldQuestNode(
-      id: 'prolog',
+      id: 'waldeingang',
       mapPosition: WorldMapBackground.nodePositions[0],
       state: QuestNodeState.current,
       type: QuestNodeType.start,
@@ -23,7 +23,7 @@ class LernFuchsWorldGame extends FlameGame {
       subtitle: 'Prolog im Flüsterwald',
     ),
     WorldQuestNode(
-      id: 'zahlenpfad',
+      id: 'lichtung',
       mapPosition: WorldMapBackground.nodePositions[1],
       state: QuestNodeState.completed,
       type: QuestNodeType.clearing,
@@ -32,7 +32,7 @@ class LernFuchsWorldGame extends FlameGame {
       subtitle: 'Hauptquest: Zahlen bis 10',
     ),
     WorldQuestNode(
-      id: 'buchstabenhain',
+      id: 'alter_baum',
       mapPosition: WorldMapBackground.nodePositions[2],
       state: QuestNodeState.available,
       type: QuestNodeType.tree,
@@ -41,7 +41,7 @@ class LernFuchsWorldGame extends FlameGame {
       subtitle: 'Hauptquest: Buchstaben',
     ),
     WorldQuestNode(
-      id: 'silbenquelle',
+      id: 'bruecke',
       mapPosition: WorldMapBackground.nodePositions[3],
       state: QuestNodeState.available,
       type: QuestNodeType.bridge,
@@ -50,7 +50,7 @@ class LernFuchsWorldGame extends FlameGame {
       subtitle: 'Nebenquest: Silben',
     ),
     WorldQuestNode(
-      id: 'musterlichtung',
+      id: 'waldsee',
       mapPosition: WorldMapBackground.nodePositions[4],
       state: QuestNodeState.locked,
       type: QuestNodeType.lake,
