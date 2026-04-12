@@ -10,17 +10,21 @@ import 'world_quest_node.dart';
 
 class WorldMapNodeComponent extends PositionComponent
     with HasGameRef<LernFuchsWorldGame>, TapCallbacks {
-  final WorldQuestNode questNode;
+  WorldQuestNode questNode;
   final int nodeIndex;
 
   WorldMapNodeComponent({required this.questNode, required this.nodeIndex})
-      : super(size: Vector2.all(80), anchor: Anchor.center, priority: 1);
+    : super(size: Vector2.all(80), anchor: Anchor.center, priority: 1);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
     final screenSize = Size(gameRef.size.x, gameRef.size.y);
     position = WorldMapBackground.nodePositionToVector(screenSize, nodeIndex);
+  }
+
+  void updateQuestNode(WorldQuestNode node) {
+    questNode = node;
   }
 
   @override
@@ -274,8 +278,6 @@ class WorldMapNodeComponent extends PositionComponent
 
   @override
   void onTapUp(TapUpEvent event) {
-    if (questNode.state != QuestNodeState.locked) {
-      gameRef.onNodeTapped(questNode);
-    }
+    gameRef.onNodeTapped(questNode);
   }
 }

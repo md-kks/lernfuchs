@@ -11,6 +11,7 @@ import '../../game/quest/quest_definition.dart';
 import '../../game/quest/quest_runtime.dart';
 import '../../game/world/world_quest_node.dart';
 import '../exercise/learning_session_mode.dart';
+import '../exercise/widgets/handwriting_widget.dart';
 
 class ForestQuestOverlay extends ConsumerStatefulWidget {
   final WorldQuestNode questNode;
@@ -18,6 +19,7 @@ class ForestQuestOverlay extends ConsumerStatefulWidget {
   final QuestRuntime runtime;
   final HintSetDefinition? hintSet;
   final String? feedback;
+  final double bottomInset;
   final ValueChanged<LearningChallengeResult> onCompleted;
   final VoidCallback onClose;
 
@@ -28,6 +30,7 @@ class ForestQuestOverlay extends ConsumerStatefulWidget {
     required this.runtime,
     this.hintSet,
     this.feedback,
+    this.bottomInset = 0,
     required this.onCompleted,
     required this.onClose,
   });
@@ -43,6 +46,7 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
   dynamic _currentAnswer;
   int _syllableCount = 0;
   bool? _lastCorrect;
+  bool _submitting = false;
 
   TaskModel? get _currentTask =>
       _tasks.isEmpty || _currentIndex >= _tasks.length
@@ -70,17 +74,19 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
   }
 
   void _handleTap(Offset position, Size size) {
-    final layout = _ForestQuestLayout(size);
+    final layout = _ForestQuestLayout(size, widget.bottomInset);
     if ((position - layout.backCenter).distance <= layout.backRadius) {
       widget.onClose();
       return;
     }
+    if (_submitting) return;
 
     final task = _currentTask;
     if (task == null) return;
+    final kind = _exerciseKind(task);
 
     if (layout.orbRect.contains(position) &&
-        _exerciseKind(task) == _ForestExerciseKind.syllable) {
+        kind == _ForestExerciseKind.syllable) {
       setState(() {
         _syllableCount++;
         _currentAnswer = _syllableCount;
@@ -102,11 +108,12 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
       if ((position - entry.value).distance <= layout.numberStoneRadius) {
         setState(() {
           _currentAnswer = entry.key;
-          if (_exerciseKind(task) == _ForestExerciseKind.syllable) {
+          if (kind == _ForestExerciseKind.syllable) {
             _syllableCount = entry.key;
           }
           _lastCorrect = null;
         });
+        _checkAndSubmit(entry.key);
         return;
       }
     }
@@ -117,21 +124,25 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
           _currentAnswer = entry.key;
           _lastCorrect = null;
         });
+        _checkAndSubmit(entry.key);
         return;
       }
     }
 
-    if (layout.confirmRect.contains(position)) {
-      _checkAndSubmit();
+    if (kind == _ForestExerciseKind.handwriting &&
+        layout.handwritingConfirmRect.contains(position)) {
+      _checkAndSubmit(_currentAnswer);
     }
   }
 
-  Future<void> _checkAndSubmit() async {
+  Future<void> _checkAndSubmit([dynamic answer]) async {
     final task = _currentTask;
-    if (task == null || _currentAnswer == null) return;
+    final submittedAnswer = answer ?? _currentAnswer;
+    if (task == null || submittedAnswer == null) return;
+    _submitting = true;
 
     final learning = ref.read(learningEngineProvider);
-    final result = learning.evaluateTask(task, _currentAnswer);
+    final result = learning.evaluateTask(task, submittedAnswer);
     await learning.recordResult(
       profileId: ref.read(appSettingsProvider).activeProfileId,
       subject: Subject.values.firstWhere(
@@ -154,10 +165,20 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
       if (result.correct) _correctCount++;
     });
 
-    await Future.delayed(const Duration(milliseconds: 700));
+    await Future.delayed(Duration(milliseconds: result.correct ? 1200 : 800));
     if (!mounted) return;
 
-    if (_currentIndex >= _tasks.length - 1 || !result.correct) {
+    if (!result.correct) {
+      setState(() {
+        _currentAnswer = null;
+        _syllableCount = 0;
+        _lastCorrect = null;
+        _submitting = false;
+      });
+      return;
+    }
+
+    if (_currentIndex >= _tasks.length - 1) {
       widget.onCompleted(
         LearningChallengeResult(
           mode: LearningSessionMode.questSingle,
@@ -168,7 +189,6 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
           totalCount: _tasks.length,
         ),
       );
-      if (result.correct) widget.onClose();
       return;
     }
 
@@ -177,6 +197,7 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
       _currentAnswer = null;
       _syllableCount = 0;
       _lastCorrect = null;
+      _submitting = false;
     });
     _speakCurrentQuestion();
   }
@@ -205,33 +226,54 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
   @override
   Widget build(BuildContext context) {
     final task = _currentTask;
-    return Positioned.fill(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) => _handleTap(details.localPosition, size),
-            child: CustomPaint(
-              size: size,
-              painter: ForestQuestPainter(
-                questNode: widget.questNode,
-                task: task,
-                hintText: _hintText(task),
-                currentAnswer: _currentAnswer,
-                syllableCount: _syllableCount,
-                lastCorrect: _lastCorrect,
-                progressIndex: _currentIndex,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        final layout = _ForestQuestLayout(size, widget.bottomInset);
+        return Stack(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) => _handleTap(details.localPosition, size),
+              child: CustomPaint(
+                size: size,
+                painter: ForestQuestPainter(
+                  questNode: widget.questNode,
+                  task: task,
+                  hintText: _hintText(task),
+                  currentAnswer: _currentAnswer,
+                  syllableCount: _syllableCount,
+                  lastCorrect: _lastCorrect,
+                  progressIndex: _currentIndex,
+                  bottomInset: widget.bottomInset,
+                ),
               ),
             ),
-          );
-        },
-      ),
+            if (task != null &&
+                _exerciseKind(task) == _ForestExerciseKind.handwriting)
+              Positioned.fromRect(
+                rect: layout.handwritingWidgetRect,
+                child: HandwritingWidget(
+                  task: task,
+                  onChanged: (answer) =>
+                      setState(() => _currentAnswer = answer),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
-enum _ForestExerciseKind { syllable, dotCount, multipleChoice, pattern, number }
+enum _ForestExerciseKind {
+  syllable,
+  dotCount,
+  multipleChoice,
+  pattern,
+  handwriting,
+  number,
+}
 
 _ForestExerciseKind _exerciseKind(TaskModel task) {
   final type = TaskType.values.byName(task.taskType);
@@ -246,6 +288,9 @@ _ForestExerciseKind _exerciseKind(TaskModel task) {
   }
   if (type == TaskType.multipleChoice) {
     return _ForestExerciseKind.multipleChoice;
+  }
+  if (type == TaskType.handwriting) {
+    return _ForestExerciseKind.handwriting;
   }
   return _ForestExerciseKind.number;
 }
@@ -271,8 +316,9 @@ List<int> _numberChoices(TaskModel task) {
 
 class _ForestQuestLayout {
   final Size size;
+  final double bottomInset;
 
-  const _ForestQuestLayout(this.size);
+  const _ForestQuestLayout(this.size, [this.bottomInset = 0]);
 
   double get scaleX => size.width / 280;
   double get scaleY => size.height / 560;
@@ -288,14 +334,22 @@ class _ForestQuestLayout {
       Rect.fromCircle(center: Offset(sx(140), sy(472)), radius: 32 * scale);
   Rect get resetRect => Rect.fromLTWH(sx(98), sy(512), sx(84), sy(20));
   double get numberStoneRadius => 18 * scale;
-  Rect get confirmRect =>
-      Rect.fromLTWH(sx(48), size.height - sy(58), sx(184), sy(42));
+  double get bottomLimit => size.height - bottomInset - 8;
+  Rect get handwritingWidgetRect => Rect.fromLTWH(
+    sx(38),
+    sy(450),
+    sx(204),
+    math.max(sy(64), bottomLimit - sy(506)),
+  );
+  Rect get handwritingConfirmRect =>
+      Rect.fromLTWH(sx(70), bottomLimit - sy(34), sx(140), sy(26));
 
   Map<int, Offset> numberStones(List<int> choices) {
     final start = 140 - ((choices.length - 1) * 26);
+    final y = math.min(sy(520), bottomLimit - sy(24));
     return {
       for (var i = 0; i < choices.length; i++)
-        choices[i]: Offset(sx(start + i * 52), sy(520)),
+        choices[i]: Offset(sx(start + i * 52), y),
     };
   }
 
@@ -308,7 +362,7 @@ class _ForestQuestLayout {
       final row = i ~/ 2;
       result[choices[i]] = Rect.fromLTWH(
         sx(35 + col * 114),
-        sy(458 + row * 44),
+        math.min(sy(458 + row * 44), bottomLimit - height - sy(6)),
         width,
         height,
       );
@@ -325,6 +379,7 @@ class ForestQuestPainter extends CustomPainter {
   final int syllableCount;
   final bool? lastCorrect;
   final int progressIndex;
+  final double bottomInset;
 
   ForestQuestPainter({
     required this.questNode,
@@ -334,6 +389,7 @@ class ForestQuestPainter extends CustomPainter {
     required this.syllableCount,
     required this.lastCorrect,
     required this.progressIndex,
+    this.bottomInset = 0,
   });
 
   @override
@@ -344,7 +400,6 @@ class ForestQuestPainter extends CustomPainter {
     _drawOvaPlank(canvas, size);
     _drawTaskTablet(canvas, size);
     _drawExerciseArea(canvas, size);
-    _drawConfirmButton(canvas, size);
     _drawNavigation(canvas, size);
   }
 
@@ -353,7 +408,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset.zero & size,
       Paint()..color = const Color(0xFF9DC49F),
     );
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     _drawSunRays(canvas, l);
     _drawBackTrees(canvas, l);
     _drawGround(canvas, l);
@@ -713,7 +768,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawTransition(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final y = size.height * 0.5;
     for (final layer in [
       (0.0, const Color(0xFF4E8038)),
@@ -732,7 +787,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawForestFloor(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     canvas.drawRect(
       Rect.fromLTWH(0, size.height * 0.52, size.width, size.height),
       Paint()..color = const Color(0xFF2D1500),
@@ -788,7 +843,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawOvaPlank(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final r = l.hintRect;
     canvas.drawRRect(
       RRect.fromRectAndRadius(r, Radius.circular(7 * l.scale)),
@@ -821,7 +876,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawTaskTablet(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final outer = l.tabletRect;
     canvas.drawRRect(
       RRect.fromRectAndRadius(outer, Radius.circular(8 * l.scale)),
@@ -904,13 +959,15 @@ class ForestQuestPainter extends CustomPainter {
         _drawChoiceExercise(canvas, size, task);
       case _ForestExerciseKind.pattern:
         _drawPatternExercise(canvas, size, task);
+      case _ForestExerciseKind.handwriting:
+        _drawHandwritingExercise(canvas, size);
       case _ForestExerciseKind.number:
         _drawNumberExercise(canvas, size, task);
     }
   }
 
   void _drawSyllableExercise(Canvas canvas, Size size, TaskModel task) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final c = l.orbRect.center;
     canvas.drawCircle(
       c,
@@ -966,7 +1023,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawDotCountExercise(Canvas canvas, Size size, TaskModel task) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final center = Offset(l.sx(140), l.sy(468));
     canvas.drawCircle(
       center,
@@ -1005,7 +1062,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawNumberStones(Canvas canvas, Size size, List<int> choices) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     for (final entry in l.numberStones(choices).entries) {
       final selected = currentAnswer?.toString() == entry.key.toString();
       if (selected) {
@@ -1050,7 +1107,7 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawPatternExercise(Canvas canvas, Size size, TaskModel task) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     final visible =
         (task.metadata['visible'] as List?)?.cast<String>() ?? const [];
     final start = 140 - visible.length * 20;
@@ -1087,7 +1144,7 @@ class ForestQuestPainter extends CustomPainter {
     List<dynamic> choices, {
     bool symbols = false,
   }) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     for (final entry in l.answerStones(choices).entries) {
       final selected = currentAnswer == entry.key;
       Color inner = selected
@@ -1134,37 +1191,49 @@ class ForestQuestPainter extends CustomPainter {
     }
   }
 
-  void _drawConfirmButton(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
-    final r = l.confirmRect;
+  void _drawHandwritingExercise(Canvas canvas, Size size) {
+    final l = _ForestQuestLayout(size, bottomInset);
+    final frame = l.handwritingWidgetRect.inflate(l.sx(6));
     canvas.drawRRect(
-      RRect.fromRectAndRadius(r, Radius.circular(8 * l.scale)),
-      Paint()..color = const Color(0x2E4CAF50),
+      RRect.fromRectAndRadius(frame, Radius.circular(8 * l.scale)),
+      Paint()..color = const Color(0xFF1E0D00),
     );
-    final mid = r.deflate(l.sx(4));
     canvas.drawRRect(
-      RRect.fromRectAndRadius(mid, Radius.circular(7 * l.scale)),
+      RRect.fromRectAndRadius(
+        frame.deflate(l.sx(4)),
+        Radius.circular(6 * l.scale),
+      ),
+      Paint()
+        ..color = const Color(0xFF3E2108)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2 * l.scale,
+    );
+    final r = l.handwritingConfirmRect;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, Radius.circular(7 * l.scale)),
       Paint()..color = const Color(0xFF1B5E20),
     );
-    final inner = mid.deflate(l.sx(4));
     canvas.drawRRect(
-      RRect.fromRectAndRadius(inner, Radius.circular(6 * l.scale)),
+      RRect.fromRectAndRadius(
+        r.deflate(3 * l.scale),
+        Radius.circular(5 * l.scale),
+      ),
       Paint()..color = const Color(0xFF2E7D32),
     );
     _drawText(
       canvas,
-      '✓  Prüfen',
-      Offset(inner.left, inner.top + l.sy(11)),
-      inner.width,
+      '✓ Bestätigen',
+      Offset(r.left, r.top + l.sy(6)),
+      r.width,
       const Color(0xFFE8F5E9),
-      14 * l.scale,
+      13 * l.scale,
       FontWeight.w800,
       align: TextAlign.center,
     );
   }
 
   void _drawNavigation(Canvas canvas, Size size) {
-    final l = _ForestQuestLayout(size);
+    final l = _ForestQuestLayout(size, bottomInset);
     canvas.drawCircle(
       l.backCenter,
       l.backRadius,
@@ -1502,6 +1571,7 @@ class ForestQuestPainter extends CustomPainter {
         oldDelegate.hintText != hintText ||
         oldDelegate.lastCorrect != lastCorrect ||
         oldDelegate.questNode.id != questNode.id ||
-        oldDelegate.progressIndex != progressIndex;
+        oldDelegate.progressIndex != progressIndex ||
+        oldDelegate.bottomInset != bottomInset;
   }
 }

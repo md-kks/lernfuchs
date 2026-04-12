@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'lern_fuchs_world_game.dart';
 
-class WorldMapBackground extends Component
-    with HasGameRef<LernFuchsWorldGame> {
+class WorldMapBackground extends Component with HasGameRef<LernFuchsWorldGame> {
   static const referenceSize = Size(400, 660);
 
   static const nodePositions = [
@@ -17,21 +16,18 @@ class WorldMapBackground extends Component
     Offset(210 / 400, 115 / 660),
   ];
 
-  static const edges = [
-    (0, 1),
-    (1, 2),
-    (1, 3),
-    (2, 4),
-    (3, 4),
-  ];
+  static const edges = [(0, 1), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)];
 
   static const controlPoints = [
     Offset(158 / 400, 500 / 660),
     Offset(140 / 400, 345 / 660),
     Offset(250 / 400, 390 / 660),
+    Offset(190 / 400, 290 / 660),
     Offset(165 / 400, 258 / 660),
     Offset(256 / 400, 215 / 660),
   ];
+
+  static const sequentialEdges = [0, 1, 3, 5];
 
   WorldMapBackground() : super(priority: 0);
 
@@ -270,6 +266,19 @@ class WorldMapBackground extends Component
 
   static Vector2 nodePositionToVector(Size screenSize, int index) {
     final point = _fractional(screenSize, nodePositions[index]);
+    return Vector2(point.dx, point.dy);
+  }
+
+  static Vector2 edgePointToVector(Size screenSize, int edgeIndex, double t) {
+    final edge = edges[edgeIndex];
+    final p0 = _fractional(screenSize, nodePositions[edge.$1]);
+    final cp = _fractional(screenSize, controlPoints[edgeIndex]);
+    final p1 = _fractional(screenSize, nodePositions[edge.$2]);
+    final mt = 1 - t;
+    final point = Offset(
+      mt * mt * p0.dx + 2 * mt * t * cp.dx + t * t * p1.dx,
+      mt * mt * p0.dy + 2 * mt * t * cp.dy + t * t * p1.dy,
+    );
     return Vector2(point.dx, point.dy);
   }
 

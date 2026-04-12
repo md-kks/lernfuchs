@@ -7,15 +7,21 @@ import 'world_map_background.dart';
 class WorldMapFinoComponent extends PositionComponent
     with HasGameRef<LernFuchsWorldGame> {
   WorldMapFinoComponent()
-      : super(size: Vector2.all(80), anchor: Anchor.center, priority: 2);
+    : super(size: Vector2.all(80), anchor: Anchor.center, priority: 2);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
     final screenSize = Size(gameRef.size.x, gameRef.size.y);
     final scale = WorldMapBackground.uniformScale(gameRef.size);
-    position = WorldMapBackground.nodePositionToVector(screenSize, 0) -
+    position =
+        WorldMapBackground.nodePositionToVector(screenSize, 0) -
         Vector2(0, 42 * scale);
+  }
+
+  void moveToMapPoint(Vector2 mapPoint) {
+    final scale = WorldMapBackground.uniformScale(gameRef.size);
+    position = mapPoint - Vector2(0, 42 * scale);
   }
 
   @override
