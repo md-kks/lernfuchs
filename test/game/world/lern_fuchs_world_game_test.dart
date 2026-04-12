@@ -8,11 +8,11 @@ void main() {
     expect(
       LernFuchsWorldGame.questNodes.map((node) => node.id),
       containsAll([
-        'prolog',
-        'zahlenpfad',
-        'buchstabenhain',
-        'silbenquelle',
-        'musterlichtung',
+        'waldeingang',
+        'lichtung',
+        'alter_baum',
+        'bruecke',
+        'waldsee',
       ]),
     );
     expect(
