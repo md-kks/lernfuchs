@@ -24,8 +24,12 @@ class TtsService {
   final FlutterTts _tts = FlutterTts();
   bool _initialized = false;
   bool _enabled;
+  bool _isSpeaking = false;
 
   TtsService({required bool enabled}) : _enabled = enabled;
+
+  /// Gibt `true` zurück solange TTS aktiv einen Text vorträgt.
+  bool get isSpeaking => _isSpeaking;
 
   /// Initialisiert die TTS-Engine (muss einmalig vor dem ersten Sprechen aufgerufen werden).
   Future<void> init() async {
@@ -34,7 +38,17 @@ class TtsService {
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.1);
     await _tts.setVolume(1.0);
+    _tts.setCompletionHandler(() => _isSpeaking = false);
+    _tts.setCancelHandler(() => _isSpeaking = false);
+    _tts.setErrorHandler((_) => _isSpeaking = false);
     _initialized = true;
+  }
+
+  /// Setzt die Sprechgeschwindigkeit temporär.
+  ///
+  /// Verwende 0.35 für langsames Vorlesen von Zielwörtern; danach 0.45 wiederherstellen.
+  Future<void> setSpeechRate(double rate) async {
+    await _tts.setSpeechRate(rate);
   }
 
   /// Aktiviert oder deaktiviert TTS zur Laufzeit (z.B. via Einstellungen-Toggle).
@@ -50,6 +64,7 @@ class TtsService {
   Future<void> speak(String text) async {
     if (!_enabled) return;
     if (!_initialized) await init();
+    _isSpeaking = true;
     await _tts.stop();
     await _tts.speak(text);
   }
@@ -69,6 +84,7 @@ class TtsService {
 
   /// Stoppt den aktuell laufenden Vorlesevorgang sofort.
   Future<void> stop() async {
+    _isSpeaking = false;
     await _tts.stop();
   }
 

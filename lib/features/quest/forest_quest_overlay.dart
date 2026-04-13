@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/subject.dart';
@@ -12,6 +13,26 @@ import '../../game/quest/quest_runtime.dart';
 import '../../game/world/world_quest_node.dart';
 import '../exercise/learning_session_mode.dart';
 import '../exercise/widgets/handwriting_widget.dart';
+
+// ── Phrasen für TTS-Feedback ──────────────────────────────────────────────────
+
+const _praisePhrases = [
+  'Super gemacht!',
+  'Wunderbar!',
+  'Genau richtig!',
+  'Du bist ein Held!',
+  'Brillant, Fino wäre stolz!',
+  'Fantastisch!',
+];
+
+const _retryPhrases = [
+  'Probier es nochmal!',
+  'Fast! Versuch es noch einmal.',
+  'Keine Sorge, du schaffst das!',
+  'Noch ein Versuch!',
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
 
 class ForestQuestOverlay extends ConsumerStatefulWidget {
   final WorldQuestNode questNode;
@@ -39,7 +60,9 @@ class ForestQuestOverlay extends ConsumerStatefulWidget {
   ConsumerState<ForestQuestOverlay> createState() => _ForestQuestOverlayState();
 }
 
-class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
+class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
+    with TickerProviderStateMixin {
+  // ── Quest-Zustand ──────────────────────────────────────────────────────────
   late final List<TaskModel> _tasks;
   int _currentIndex = 0;
   int _correctCount = 0;
@@ -48,30 +71,184 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
   bool? _lastCorrect;
   bool _submitting = false;
 
+  // ── Ticker ─────────────────────────────────────────────────────────────────
+  late final Ticker _ticker;
+  Duration? _prevElapsed;
+
+  // ── Animationswerte ────────────────────────────────────────────────────────
+  double _breathT = 0.0;
+
+  bool _finoJumping = false;
+  double _finoJumpElapsedMs = 0.0;
+
+  bool _brummCelebrating = false;
+  double _brummCelebElapsedMs = 0.0;
+
+  bool _ovaFlapping = false;
+  double _ovaWingElapsedMs = 0.0;
+
+  bool _gateOpening = false;
+  double _gateElapsedMs = 0.0;
+  double _gateOpenProgress = 0.0;
+
+  // ── TTS ────────────────────────────────────────────────────────────────────
+  final Set<String> _spokenKeys = {};
+  final _rng = math.Random();
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   TaskModel? get _currentTask =>
       _tasks.isEmpty || _currentIndex >= _tasks.length
-      ? null
-      : _tasks[_currentIndex];
+          ? null
+          : _tasks[_currentIndex];
 
+  // ══════════════════════════════════════════════════════════════════════════
   @override
   void initState() {
     super.initState();
     final request = widget.runtime.createLearningRequest(widget.quest.id);
     _tasks = widget.runtime.learningEngine.createSession(request).tasks;
-    Future.delayed(const Duration(milliseconds: 300), _speakCurrentQuestion);
+    _ticker = createTicker(_onTick)..start();
+    Future.delayed(const Duration(milliseconds: 300), _startTtsSequence);
   }
 
   @override
   void dispose() {
+    _ticker.dispose();
     ref.read(ttsServiceProvider).stop();
     super.dispose();
   }
 
-  void _speakCurrentQuestion() {
-    final task = _currentTask;
-    if (task == null) return;
-    ref.read(ttsServiceProvider).speak(task.question);
+  // ── Ticker-Callback ────────────────────────────────────────────────────────
+
+  void _onTick(Duration elapsed) {
+    final deltaMs = _prevElapsed == null
+        ? 0.0
+        : (elapsed - _prevElapsed!).inMilliseconds.toDouble();
+    _prevElapsed = elapsed;
+
+    setState(() {
+      _breathT += deltaMs / 1200.0;
+
+      if (_finoJumping) {
+        _finoJumpElapsedMs += deltaMs;
+        if (_finoJumpElapsedMs >= 700) {
+          _finoJumping = false;
+          _finoJumpElapsedMs = 0.0;
+        }
+      }
+
+      if (_brummCelebrating) {
+        _brummCelebElapsedMs += deltaMs;
+        if (_brummCelebElapsedMs >= 1400) {
+          _brummCelebrating = false;
+          _brummCelebElapsedMs = 0.0;
+        }
+      }
+
+      if (_ovaFlapping) {
+        _ovaWingElapsedMs += deltaMs;
+        if (_ovaWingElapsedMs >= 500) {
+          _ovaFlapping = false;
+          _ovaWingElapsedMs = 0.0;
+        }
+      }
+
+      if (_gateOpening) {
+        _gateElapsedMs += deltaMs;
+        _gateOpenProgress = (_gateElapsedMs / 800.0).clamp(0.0, 1.0);
+        if (_gateElapsedMs >= 800) _gateOpening = false;
+      }
+    });
   }
+
+  // ── TTS-Sequenz ────────────────────────────────────────────────────────────
+
+  Future<void> _startTtsSequence() async {
+    if (!mounted) return;
+    final tts = ref.read(ttsServiceProvider);
+    if (!tts.isEnabled) return;
+
+    // 1. Erzähltext
+    final storyText = widget.questNode.storyText;
+    if (storyText.isNotEmpty) {
+      final key = 'story:${widget.questNode.id}';
+      if (!_spokenKeys.contains(key)) {
+        _spokenKeys.add(key);
+        await tts.speak(storyText);
+        await Future.delayed(const Duration(milliseconds: 3000));
+      }
+    }
+    if (!mounted) return;
+
+    // 2. Erster Hinweis
+    final hint = widget.hintSet?.levels.isNotEmpty == true
+        ? widget.hintSet!.levels.first.text
+        : null;
+    if (hint != null && hint.isNotEmpty) {
+      final key = 'hint0:${widget.questNode.id}';
+      if (!_spokenKeys.contains(key)) {
+        _spokenKeys.add(key);
+        await tts.speak(hint);
+        await Future.delayed(const Duration(milliseconds: 2000));
+      }
+    }
+    if (!mounted) return;
+
+    // 3. Frage
+    final task = _currentTask;
+    if (task != null) {
+      final key = 'q:${task.id}';
+      if (!_spokenKeys.contains(key)) {
+        _spokenKeys.add(key);
+        await tts.speak(task.question);
+        await Future.delayed(const Duration(milliseconds: 2000));
+      }
+      if (!mounted) return;
+
+      // 4. Zielwort (langsam)
+      final word = task.metadata['word'] as String? ??
+          task.metadata['displayedWord'] as String? ??
+          '';
+      if (word.isNotEmpty) {
+        final key = 'word:${task.id}';
+        if (!_spokenKeys.contains(key)) {
+          _spokenKeys.add(key);
+          await tts.setSpeechRate(0.35);
+          await tts.speak(word);
+          await tts.setSpeechRate(0.45);
+        }
+      }
+    }
+  }
+
+  Future<void> _speakFeedback(bool correct) async {
+    if (!mounted) return;
+    final tts = ref.read(ttsServiceProvider);
+    if (!tts.isEnabled) return;
+    final phrases = correct ? _praisePhrases : _retryPhrases;
+    await tts.speak(phrases[_rng.nextInt(phrases.length)]);
+  }
+
+  // ── Animationen ───────────────────────────────────────────────────────────
+
+  void _startCorrectAnimations() {
+    final nodeId = widget.questNode.id;
+    setState(() {
+      _finoJumping = true;
+      _finoJumpElapsedMs = 0.0;
+      if (nodeId == 'lichtung' || nodeId == 'bruecke') {
+        _brummCelebrating = true;
+        _brummCelebElapsedMs = 0.0;
+      }
+      if (nodeId == 'bruecke') {
+        _gateOpening = true;
+        _gateElapsedMs = 0.0;
+      }
+    });
+  }
+
+  // ── Eingabe-Handling ──────────────────────────────────────────────────────
 
   void _handleTap(Offset position, Size size) {
     final layout = _ForestQuestLayout(size, widget.bottomInset);
@@ -85,7 +262,8 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
     if (task == null) return;
     final kind = _exerciseKind(task);
 
-    if (layout.orbRect.contains(position) &&
+    if (layout.orbRect != Rect.zero &&
+        layout.orbRect.contains(position) &&
         kind == _ForestExerciseKind.syllable) {
       setState(() {
         _syllableCount++;
@@ -155,9 +333,12 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
 
     if (result.correct) {
       ref.read(soundServiceProvider).playCorrect().catchError((_) {});
+      _startCorrectAnimations();
     } else {
       ref.read(soundServiceProvider).playWrong().catchError((_) {});
     }
+
+    _speakFeedback(result.correct);
 
     if (!mounted) return;
     setState(() {
@@ -198,8 +379,10 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
       _syllableCount = 0;
       _lastCorrect = null;
       _submitting = false;
+      _spokenKeys.remove('q:${_tasks[_currentIndex].id}');
     });
-    _speakCurrentQuestion();
+    Future.delayed(
+        const Duration(milliseconds: 300), _startTtsSequence);
   }
 
   List<dynamic> _answerChoices(TaskModel task) {
@@ -223,9 +406,11 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
         : 'Schau genau hin und probiere es in Ruhe.';
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final task = _currentTask;
+    final tts = ref.read(ttsServiceProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
@@ -246,6 +431,13 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
                   lastCorrect: _lastCorrect,
                   progressIndex: _currentIndex,
                   bottomInset: widget.bottomInset,
+                  breathT: _breathT,
+                  finoJumpElapsedMs: _finoJumping ? _finoJumpElapsedMs : 0.0,
+                  brummCelebElapsedMs:
+                      _brummCelebrating ? _brummCelebElapsedMs : 0.0,
+                  ovaWingElapsedMs: _ovaFlapping ? _ovaWingElapsedMs : 0.0,
+                  gateOpenProgress: _gateOpenProgress,
+                  ttsIsSpeaking: tts.isSpeaking,
                 ),
               ),
             ),
@@ -265,6 +457,10 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay> {
     );
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════════════════════════
 
 enum _ForestExerciseKind {
   syllable,
@@ -314,6 +510,10 @@ List<int> _numberChoices(TaskModel task) {
   return sorted;
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Layout — alle Positionen dynamisch berechnet
+// ══════════════════════════════════════════════════════════════════════════════
+
 class _ForestQuestLayout {
   final Size size;
   final double bottomInset;
@@ -323,53 +523,151 @@ class _ForestQuestLayout {
   double get scaleX => size.width / 280;
   double get scaleY => size.height / 560;
   double get scale => math.min(scaleX, scaleY);
+
+  /// Textgröße immer an Breite gebunden (nicht min mit Höhe).
+  double get textScale => scaleX;
+
   double sx(double value) => value * scaleX;
   double sy(double value) => value * scaleY;
 
-  Offset get backCenter => Offset(sx(24), sy(24));
-  double get backRadius => 16 * scale;
-  Rect get hintRect => Rect.fromLTWH(sx(18), sy(296), sx(244), sy(62));
-  Rect get tabletRect => Rect.fromLTWH(sx(24), sy(370), sx(232), sy(74));
-  Rect get orbRect =>
-      Rect.fromCircle(center: Offset(sx(140), sy(472)), radius: 32 * scale);
-  Rect get resetRect => Rect.fromLTWH(sx(98), sy(512), sx(84), sy(20));
-  double get numberStoneRadius => 18 * scale;
+  // ── Dynamisches Floor-Layout ──────────────────────────────────────────────
+
+  double get floorTop => size.height * 0.52;
+  double get floorHeight => size.height - floorTop - bottomInset - 12;
+
+  double get _ovaPlankH {
+    if (floorHeight < 60 * scale) return 32 * scale;
+    return 44 * scale;
+  }
+
+  double get _tabletH => 54 * scale;
+
+  bool get _showInstruction {
+    final usedWith =
+        _ovaPlankH + 8 * scale + _tabletH + 8 * scale + 18 * scale + 8 * scale;
+    return (floorHeight - usedWith) >= 80 * scale;
+  }
+
+  double get _instructionH => _showInstruction ? 18 * scale : 0;
+
+  double get exerciseH {
+    final used =
+        _ovaPlankH + 8 * scale + _tabletH + 8 * scale + _instructionH + 8 * scale;
+    return math.max(0, floorHeight - used);
+  }
+
+  double get exerciseTop =>
+      floorTop +
+      6 * scale +
+      _ovaPlankH +
+      8 * scale +
+      _tabletH +
+      8 * scale +
+      _instructionH +
+      8 * scale;
+
+  // ── Positionierte Rechtecke ───────────────────────────────────────────────
+
+  Rect get hintRect {
+    final y = floorTop + 6 * scale;
+    return Rect.fromLTWH(sx(18), y, sx(244), _ovaPlankH);
+  }
+
+  Rect get tabletRect {
+    final y = floorTop + 6 * scale + _ovaPlankH + 8 * scale;
+    return Rect.fromLTWH(sx(24), y, sx(232), _tabletH);
+  }
+
+  /// Orb nur sichtbar wenn genug Platz; sonst Rect.zero.
+  Rect get orbRect {
+    if (exerciseH < 160 * scale) return Rect.zero;
+    final cy = exerciseTop + 32 * scale + 8 * scale;
+    return Rect.fromCircle(center: Offset(sx(140), cy), radius: 32 * scale);
+  }
+
+  Rect get resetRect {
+    final stoneY = _stonesY;
+    return Rect.fromLTWH(
+        sx(98), stoneY + numberStoneRadius + 4 * scale, sx(84), sy(20));
+  }
+
+  double get numberStoneRadius {
+    if (exerciseH >= 160 * scale) return 20 * scale;
+    return math.min(20 * scale, (size.width - 60 * scale) / 8);
+  }
+
+  double get _stonesY {
+    if (exerciseH >= 160 * scale && orbRect != Rect.zero) {
+      return orbRect.center.dy + orbRect.height / 2 + 8 * scale + numberStoneRadius;
+    }
+    return exerciseTop + 8 * scale + numberStoneRadius;
+  }
+
   double get bottomLimit => size.height - bottomInset - 8;
+
   Rect get handwritingWidgetRect => Rect.fromLTWH(
-    sx(38),
-    sy(450),
-    sx(204),
-    math.max(sy(64), bottomLimit - sy(506)),
-  );
+        sx(38),
+        exerciseTop,
+        sx(204),
+        math.max(sy(64), bottomLimit - exerciseTop - sy(38)),
+      );
+
   Rect get handwritingConfirmRect =>
       Rect.fromLTWH(sx(70), bottomLimit - sy(34), sx(140), sy(26));
 
+  Offset get backCenter => Offset(sx(24), sy(24));
+  double get backRadius => 16 * scale;
+
+  // ── Tippziel-Maps ─────────────────────────────────────────────────────────
+
   Map<int, Offset> numberStones(List<int> choices) {
-    final start = 140 - ((choices.length - 1) * 26);
-    final y = math.min(sy(520), bottomLimit - sy(24));
+    final y = math.min(_stonesY, bottomLimit - numberStoneRadius - 4 * scale);
+    final spacing = (size.width - 28 * scale) / choices.length;
     return {
       for (var i = 0; i < choices.length; i++)
-        choices[i]: Offset(sx(start + i * 52), y),
+        choices[i]: Offset(14 * scale + spacing * i + spacing / 2, y),
     };
   }
 
   Map<dynamic, Rect> answerStones(List<dynamic> choices) {
     final result = <dynamic, Rect>{};
-    final width = sx(102);
-    final height = sy(36);
-    for (var i = 0; i < choices.take(4).length; i++) {
-      final col = i % 2;
-      final row = i ~/ 2;
-      result[choices[i]] = Rect.fromLTWH(
-        sx(35 + col * 114),
-        math.min(sy(458 + row * 44), bottomLimit - height - sy(6)),
-        width,
-        height,
-      );
+    final numOptions = choices.take(4).length;
+    if (numOptions == 0) return result;
+
+    final use2x2 = exerciseH >= 180 * scale && numOptions == 4;
+    final rectW = size.width - 28 * scale;
+    final minRectH = 36 * scale;
+
+    if (use2x2) {
+      final colW = (rectW - 8 * scale) / 2;
+      final rowH = ((exerciseH - 8 * scale) / 2).clamp(minRectH, 44 * scale);
+      for (var i = 0; i < numOptions; i++) {
+        final col = i % 2;
+        final row = i ~/ 2;
+        result[choices[i]] = Rect.fromLTWH(
+          14 * scale + col * (colW + 8 * scale),
+          exerciseTop + row * (rowH + 8 * scale),
+          colW,
+          rowH,
+        );
+      }
+    } else {
+      final rawH = (exerciseH - (numOptions - 1) * 6 * scale) / numOptions;
+      final rectH = rawH.clamp(minRectH, 44 * scale);
+      final totalH = rectH * numOptions + (numOptions - 1) * 6 * scale;
+      var ry = exerciseTop + (exerciseH - totalH) / 2;
+      for (var i = 0; i < numOptions; i++) {
+        result[choices[i]] = Rect.fromLTWH(14 * scale, ry, rectW, rectH);
+        ry += rectH + 6 * scale;
+      }
     }
     return result;
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Painter
+// ══════════════════════════════════════════════════════════════════════════════
 
 class ForestQuestPainter extends CustomPainter {
   final WorldQuestNode questNode;
@@ -381,6 +679,14 @@ class ForestQuestPainter extends CustomPainter {
   final int progressIndex;
   final double bottomInset;
 
+  // ── Animationswerte ────────────────────────────────────────────────────────
+  final double breathT;
+  final double finoJumpElapsedMs; // 0 = ruhig
+  final double brummCelebElapsedMs; // 0 = ruhig
+  final double ovaWingElapsedMs; // 0 = ruhig
+  final double gateOpenProgress; // 0..1
+  final bool ttsIsSpeaking;
+
   ForestQuestPainter({
     required this.questNode,
     required this.task,
@@ -390,6 +696,12 @@ class ForestQuestPainter extends CustomPainter {
     required this.lastCorrect,
     required this.progressIndex,
     this.bottomInset = 0,
+    this.breathT = 0,
+    this.finoJumpElapsedMs = 0,
+    this.brummCelebElapsedMs = 0,
+    this.ovaWingElapsedMs = 0,
+    this.gateOpenProgress = 0,
+    this.ttsIsSpeaking = false,
   });
 
   @override
@@ -402,6 +714,39 @@ class ForestQuestPainter extends CustomPainter {
     _drawExerciseArea(canvas, size);
     _drawNavigation(canvas, size);
   }
+
+  // ── Atemversatz ────────────────────────────────────────────────────────────
+
+  double _breathOffset(double scale) =>
+      math.sin(breathT * 2 * math.pi) * 1.5 * scale;
+
+  // ── Fino-Sprungversatz ─────────────────────────────────────────────────────
+
+  double _finoJumpOffset(double scale) {
+    if (finoJumpElapsedMs <= 0) return 0;
+    final t = (finoJumpElapsedMs / 700.0).clamp(0.0, 1.0);
+    const upFrac = 0.3 / 0.7;
+    if (t < upFrac) {
+      final p = t / upFrac;
+      return -12 * scale * (1 - math.pow(1 - p, 2).toDouble());
+    } else {
+      final p = (t - upFrac) / (1 - upFrac);
+      return -12 * scale * (1 - p * p);
+    }
+  }
+
+  // ── Brumm-Jubelfortschritt ─────────────────────────────────────────────────
+
+  double _brummCelebProgress() =>
+      (brummCelebElapsedMs / 1400.0).clamp(0.0, 1.0);
+
+  // ── Ova-Flügelfortschritt ──────────────────────────────────────────────────
+
+  double _ovaWingProgress() => (ovaWingElapsedMs / 500.0).clamp(0.0, 1.0);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SZENE
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawScene(Canvas canvas, Size size) {
     canvas.drawRect(
@@ -516,15 +861,12 @@ class ForestQuestPainter extends CustomPainter {
       Paint()..color = const Color(0xFF5D4037),
     );
     canvas.drawOval(
-      Rect.fromLTWH(l.sx(92), l.sy(91), l.sx(32), l.sy(12)),
-      moss,
-    );
+        Rect.fromLTWH(l.sx(92), l.sy(91), l.sx(32), l.sy(12)), moss);
     canvas.drawOval(
-      Rect.fromLTWH(l.sx(154), l.sy(103), l.sx(28), l.sy(10)),
-      moss,
-    );
-    _drawFino(canvas, l.sx(112), l.sy(204), l.scale * 1.05);
-    _drawOva(canvas, l.sx(143), l.sy(88), l.scale * 0.75);
+        Rect.fromLTWH(l.sx(154), l.sy(103), l.sx(28), l.sy(10)), moss);
+    final bo = _breathOffset(l.scale);
+    _drawFino(canvas, l.sx(112), l.sy(204) + bo + _finoJumpOffset(l.scale), l.scale * 1.05);
+    _drawOva(canvas, l.sx(143), l.sy(88) + bo, l.scale * 0.75, wingProgress: _ovaWingProgress());
   }
 
   void _drawClearingScene(Canvas canvas, _ForestQuestLayout l) {
@@ -538,19 +880,13 @@ class ForestQuestPainter extends CustomPainter {
     );
     for (var i = 0; i < 6; i++) {
       final p = Offset(l.sx(124 + (i % 3) * 16), l.sy(162 + (i ~/ 3) * 10));
-      canvas.drawCircle(
-        p,
-        l.scale * 7,
-        Paint()..color = const Color(0x55FFD700),
-      );
-      canvas.drawCircle(
-        p,
-        l.scale * 3.5,
-        Paint()..color = const Color(0xFFFFC107),
-      );
+      canvas.drawCircle(p, l.scale * 7, Paint()..color = const Color(0x55FFD700));
+      canvas.drawCircle(p, l.scale * 3.5, Paint()..color = const Color(0xFFFFC107));
     }
-    _drawFino(canvas, l.sx(80), l.sy(214), l.scale);
-    _drawBrumm(canvas, l.sx(205), l.sy(210), l.scale);
+    final bo = _breathOffset(l.scale);
+    _drawFino(canvas, l.sx(80), l.sy(214) + bo + _finoJumpOffset(l.scale), l.scale);
+    _drawBrumm(canvas, l.sx(205), l.sy(210) + bo, l.scale,
+        celebProgress: _brummCelebProgress());
   }
 
   void _drawAncientTreeScene(Canvas canvas, _ForestQuestLayout l) {
@@ -574,8 +910,9 @@ class ForestQuestPainter extends CustomPainter {
     }
     _drawRune(canvas, l, Offset(l.sx(135), l.sy(142)), 'A');
     _drawRune(canvas, l, Offset(l.sx(148), l.sy(176)), 'B');
-    _drawFino(canvas, l.sx(96), l.sy(230), l.scale);
-    _drawOva(canvas, l.sx(188), l.sy(66), l.scale * 0.72);
+    final bo = _breathOffset(l.scale);
+    _drawFino(canvas, l.sx(96), l.sy(230) + bo + _finoJumpOffset(l.scale), l.scale);
+    _drawOva(canvas, l.sx(188), l.sy(66) + bo, l.scale * 0.72, wingProgress: _ovaWingProgress());
   }
 
   void _drawRune(Canvas canvas, _ForestQuestLayout l, Offset p, String rune) {
@@ -583,11 +920,7 @@ class ForestQuestPainter extends CustomPainter {
       ..color = const Color(0xFFFFD700)
       ..strokeWidth = l.scale * 2
       ..style = PaintingStyle.stroke;
-    canvas.drawCircle(
-      p,
-      l.scale * 10,
-      Paint()..color = const Color(0x4DFFD700),
-    );
+    canvas.drawCircle(p, l.scale * 10, Paint()..color = const Color(0x4DFFD700));
     final path = rune == 'A'
         ? (Path()
             ..moveTo(p.dx - l.sx(7), p.dy + l.sy(7))
@@ -598,53 +931,28 @@ class ForestQuestPainter extends CustomPainter {
         : (Path()
             ..moveTo(p.dx - l.sx(6), p.dy - l.sy(8))
             ..lineTo(p.dx - l.sx(6), p.dy + l.sy(8))
-            ..quadraticBezierTo(
-              p.dx + l.sx(8),
-              p.dy + l.sy(5),
-              p.dx - l.sx(4),
-              p.dy,
-            )
-            ..quadraticBezierTo(
-              p.dx + l.sx(8),
-              p.dy - l.sy(5),
-              p.dx - l.sx(6),
-              p.dy - l.sy(8),
-            ));
+            ..quadraticBezierTo(p.dx + l.sx(8), p.dy + l.sy(5), p.dx - l.sx(4), p.dy)
+            ..quadraticBezierTo(p.dx + l.sx(8), p.dy - l.sy(5), p.dx - l.sx(6), p.dy - l.sy(8)));
     canvas.drawPath(path, paint);
   }
 
   void _drawBridgeScene(Canvas canvas, _ForestQuestLayout l) {
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(140), l.sy(190)),
-        width: l.sx(340),
-        height: l.sy(70),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(140), l.sy(190)), width: l.sx(340), height: l.sy(70)),
       Paint()..color = const Color(0xFF1565C0),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(140), l.sy(190)),
-        width: l.sx(310),
-        height: l.sy(52),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(140), l.sy(190)), width: l.sx(310), height: l.sy(52)),
       Paint()..color = const Color(0xFF1E88E5),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(140), l.sy(190)),
-        width: l.sx(250),
-        height: l.sy(32),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(140), l.sy(190)), width: l.sx(250), height: l.sy(32)),
       Paint()..color = const Color(0xFF42A5F5),
     );
     for (var i = 0; i < 6; i++) {
       canvas.drawRect(
         Rect.fromLTWH(l.sx(64 + i * 26), l.sy(170), l.sx(22), l.sy(52)),
-        Paint()
-          ..color = i.isEven
-              ? const Color(0xFF8D6E63)
-              : const Color(0xFF795548),
+        Paint()..color = i.isEven ? const Color(0xFF8D6E63) : const Color(0xFF795548),
       );
       canvas.drawLine(
         Offset(l.sx(45 + i * 36), l.sy(184)),
@@ -654,87 +962,81 @@ class ForestQuestPainter extends CustomPainter {
           ..strokeWidth = l.scale,
       );
     }
-    final rail = Paint()
-      ..color = const Color(0xFF4E342E)
-      ..strokeWidth = l.scale * 3;
-    canvas.drawLine(
-      Offset(l.sx(54), l.sy(166)),
-      Offset(l.sx(226), l.sy(166)),
-      rail,
-    );
-    canvas.drawLine(
-      Offset(l.sx(54), l.sy(224)),
-      Offset(l.sx(226), l.sy(224)),
-      rail,
-    );
+    final rail = Paint()..color = const Color(0xFF4E342E)..strokeWidth = l.scale * 3;
+    canvas.drawLine(Offset(l.sx(54), l.sy(166)), Offset(l.sx(226), l.sy(166)), rail);
+    canvas.drawLine(Offset(l.sx(54), l.sy(224)), Offset(l.sx(226), l.sy(224)), rail);
     for (var x = 58.0; x <= 226; x += 30) {
       canvas.drawRect(
-        Rect.fromCenter(
-          center: Offset(l.sx(x), l.sy(195)),
-          width: l.sx(6),
-          height: l.sy(68),
-        ),
+        Rect.fromCenter(center: Offset(l.sx(x), l.sy(195)), width: l.sx(6), height: l.sy(68)),
         Paint()..color = const Color(0xFF5D4037),
       );
     }
+
+    // Tor (mit Öffnungsanimation)
+    final gx = l.sx(140);
+    final gy = l.sy(195);
+    final gw = l.sx(22);
+    final gh = l.sy(60);
+
+    // Linke Torrhälfte — dreht um linke Kante
+    canvas.save();
+    canvas.translate(gx - gw, gy - gh);
+    canvas.rotate(-70 * math.pi / 180 * gateOpenProgress);
+    canvas.drawRect(Rect.fromLTWH(0, 0, gw, gh), Paint()..color = const Color(0xFF3E2723));
     canvas.drawRect(
-      Rect.fromLTWH(l.sx(118), l.sy(156), l.sx(44), l.sy(66)),
-      Paint()..color = const Color(0xFF3E2723),
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(l.sx(124), l.sy(164), l.sx(32), l.sy(52)),
+      Rect.fromLTWH(l.sx(3), l.sy(4), l.sx(16), l.sy(52)),
       Paint()..color = const Color(0xFF5D4037),
     );
+    canvas.restore();
+
+    // Rechte Torrhälfte — dreht um rechte Kante
+    canvas.save();
+    canvas.translate(gx + gw, gy - gh);
+    canvas.rotate(70 * math.pi / 180 * gateOpenProgress);
+    canvas.drawRect(Rect.fromLTWH(-gw, 0, gw, gh), Paint()..color = const Color(0xFF3E2723));
+    canvas.drawRect(
+      Rect.fromLTWH(-gw + l.sx(3), l.sy(4), l.sx(16), l.sy(52)),
+      Paint()..color = const Color(0xFF5D4037),
+    );
+    canvas.restore();
+
+    // Goldener Glanz bei Öffnung
+    if (gateOpenProgress > 0) {
+      final glowRadius = 28 * l.scale * gateOpenProgress;
+      canvas.drawCircle(
+        Offset(gx, gy - gh / 2),
+        glowRadius,
+        Paint()..color = const Color(0x59FFD700),
+      );
+    }
+
+    // Tor-Bogen (immer)
     canvas.drawArc(
-      Rect.fromLTWH(l.sx(130), l.sy(174), l.sx(20), l.sy(24)),
-      math.pi,
-      math.pi,
-      false,
+      Rect.fromLTWH(gx - gw, gy - gh - l.sy(12), gw * 2, l.sy(24)),
+      math.pi, math.pi, false,
       Paint()
         ..color = const Color(0xFFFFC107)
         ..style = PaintingStyle.stroke
         ..strokeWidth = l.scale * 3,
     );
-    canvas.drawRect(
-      Rect.fromLTWH(l.sx(130), l.sy(190), l.sx(20), l.sy(18)),
-      Paint()..color = const Color(0xFFFFB300),
-    );
-    canvas.drawCircle(
-      Offset(l.sx(140), l.sy(198)),
-      l.scale * 3,
-      Paint()..color = const Color(0xFFFF8F00),
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(l.sx(138), l.sy(198), l.sx(4), l.sy(8)),
-      Paint()..color = const Color(0xFFFF8F00),
-    );
-    _drawFino(canvas, l.sx(70), l.sy(238), l.scale);
-    _drawBrumm(canvas, l.sx(218), l.sy(238), l.scale);
+
+    final bo = _breathOffset(l.scale);
+    _drawFino(canvas, l.sx(70), l.sy(238) + bo + _finoJumpOffset(l.scale), l.scale);
+    _drawBrumm(canvas, l.sx(218), l.sy(238) + bo, l.scale,
+        celebProgress: _brummCelebProgress());
   }
 
   void _drawLakeScene(Canvas canvas, _ForestQuestLayout l) {
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(146), l.sy(188)),
-        width: l.sx(190),
-        height: l.sy(86),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(146), l.sy(188)), width: l.sx(190), height: l.sy(86)),
       Paint()..color = const Color(0xFF1565C0),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(146), l.sy(188)),
-        width: l.sx(150),
-        height: l.sy(58),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(146), l.sy(188)), width: l.sx(150), height: l.sy(58)),
       Paint()..color = const Color(0xFF1E88E5),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(l.sx(150), l.sy(190)),
-        width: l.sx(22),
-        height: l.sy(70),
-      ),
+      Rect.fromCenter(center: Offset(l.sx(150), l.sy(190)), width: l.sx(22), height: l.sy(70)),
       Paint()..color = const Color(0x6642A5F5),
     );
     canvas.drawOval(
@@ -744,28 +1046,23 @@ class ForestQuestPainter extends CustomPainter {
     for (var i = 0; i < 4; i++) {
       final p = Offset(l.sx(82 + i * 42), l.sy(194 + (i.isEven ? -8 : 8)));
       canvas.drawOval(
-        Rect.fromCenter(
-          center: p.translate(0, l.sy(4)),
-          width: l.sx(32),
-          height: l.sy(18),
-        ),
+        Rect.fromCenter(center: p.translate(0, l.sy(4)), width: l.sx(32), height: l.sy(18)),
         Paint()..color = const Color(0x55000000),
       );
       canvas.drawOval(
         Rect.fromCenter(center: p, width: l.sx(30), height: l.sy(16)),
         Paint()..color = const Color(0xFF8D6E63),
       );
-      _drawSymbol(
-        canvas,
-        l,
-        ['dot', 'triangle', 'square', 'circle'][i],
-        p,
-        l.scale * 0.8,
-        const Color(0xFFFFD700),
-      );
+      _drawSymbol(canvas, l, ['dot', 'triangle', 'square', 'circle'][i], p,
+          l.scale * 0.8, const Color(0xFFFFD700));
     }
-    _drawFino(canvas, l.sx(58), l.sy(230), l.scale);
+    final bo = _breathOffset(l.scale);
+    _drawFino(canvas, l.sx(58), l.sy(230) + bo + _finoJumpOffset(l.scale), l.scale);
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BODENÜBERGANG
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawTransition(Canvas canvas, Size size) {
     final l = _ForestQuestLayout(size, bottomInset);
@@ -785,6 +1082,10 @@ class ForestQuestPainter extends CustomPainter {
       canvas.drawPath(path, Paint()..color = layer.$2);
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // WALDBODEN
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawForestFloor(Canvas canvas, Size size) {
     final l = _ForestQuestLayout(size, bottomInset);
@@ -826,21 +1127,19 @@ class ForestQuestPainter extends CustomPainter {
 
   void _drawMushroom(Canvas canvas, _ForestQuestLayout l, Offset p) {
     canvas.drawRect(
-      Rect.fromCenter(
-        center: p.translate(0, l.sy(8)),
-        width: l.sx(8),
-        height: l.sy(16),
-      ),
+      Rect.fromCenter(center: p.translate(0, l.sy(8)), width: l.sx(8), height: l.sy(16)),
       Paint()..color = const Color(0xFFE8D5B0),
     );
     canvas.drawArc(
       Rect.fromCenter(center: p, width: l.sx(24), height: l.sy(18)),
-      math.pi,
-      math.pi,
-      true,
+      math.pi, math.pi, true,
       Paint()..color = const Color(0xFFE64A19),
     );
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // OVA-PLANKE
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawOvaPlank(Canvas canvas, Size size) {
     final l = _ForestQuestLayout(size, bottomInset);
@@ -853,14 +1152,31 @@ class ForestQuestPainter extends CustomPainter {
       Rect.fromLTWH(r.left, r.top, l.sx(3), r.height),
       Paint()..color = const Color(0xFFFF8F00),
     );
-    _drawOva(canvas, r.left + l.sx(24), r.top + l.sy(34), l.scale * 0.48);
+    final ovaIconCx = r.left + l.sx(24);
+    final ovaIconCy = r.top + l.sy(34);
+    _drawOva(canvas, ovaIconCx, ovaIconCy, l.scale * 0.48,
+        wingProgress: _ovaWingProgress());
+
+    // TTS-Pulsring um Ova-Icon
+    if (ttsIsSpeaking) {
+      final pulseR = 11 * l.scale * 0.48 + math.sin(breathT * 2 * math.pi) * 2 * l.scale * 0.48;
+      canvas.drawCircle(
+        Offset(ovaIconCx, ovaIconCy),
+        pulseR,
+        Paint()
+          ..color = const Color(0x99FF8F00)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
+
     _drawText(
       canvas,
       'Ova flüstert:',
       Offset(r.left + l.sx(48), r.top + l.sy(12)),
       l.sx(180),
       const Color(0xFFFF8F00),
-      9 * l.scale,
+      11 * l.textScale, // Issue 2: textScale statt l.scale
       FontWeight.w700,
     );
     _drawText(
@@ -869,11 +1185,15 @@ class ForestQuestPainter extends CustomPainter {
       Offset(r.left + l.sx(48), r.top + l.sy(28)),
       l.sx(176),
       const Color(0xFFE8D5B0),
-      10 * l.scale,
+      12 * l.textScale, // Issue 2
       FontWeight.w500,
       maxLines: 2,
     );
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // AUFGABEN-TAFEL
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawTaskTablet(Canvas canvas, Size size) {
     final l = _ForestQuestLayout(size, bottomInset);
@@ -915,7 +1235,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(inner.left + l.sx(10), inner.top + l.sy(12)),
       inner.width - l.sx(20),
       const Color(0xFFE8D5A8),
-      11 * l.scale,
+      13 * l.textScale, // Issue 2: 11 → 13 * textScale
       FontWeight.w700,
       align: TextAlign.center,
       maxLines: 2,
@@ -924,10 +1244,10 @@ class ForestQuestPainter extends CustomPainter {
       _drawText(
         canvas,
         lines.skip(1).join(' '),
-        Offset(inner.left + l.sx(10), inner.top + l.sy(42)),
+        Offset(inner.left + l.sx(10), inner.top + l.sy(40)),
         inner.width - l.sx(20),
         const Color(0xFFFF8F00),
-        20 * l.scale,
+        22 * l.textScale, // Issue 2: 20 → 22 * textScale
         FontWeight.w800,
         align: TextAlign.center,
         maxLines: 1,
@@ -939,13 +1259,17 @@ class ForestQuestPainter extends CustomPainter {
         Offset(inner.left + l.sx(10), inner.top + l.sy(40)),
         inner.width - l.sx(20),
         const Color(0xFFFF8F00),
-        20 * l.scale,
+        22 * l.textScale, // Issue 2
         FontWeight.w800,
         align: TextAlign.center,
         maxLines: 1,
       );
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ÜBUNGSBEREICH
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawExerciseArea(Canvas canvas, Size size) {
     final task = this.task;
@@ -968,54 +1292,49 @@ class ForestQuestPainter extends CustomPainter {
 
   void _drawSyllableExercise(Canvas canvas, Size size, TaskModel task) {
     final l = _ForestQuestLayout(size, bottomInset);
-    final c = l.orbRect.center;
-    canvas.drawCircle(
-      c,
-      l.scale * 46,
-      Paint()..color = const Color(0x1AE64A19),
-    );
-    canvas.drawCircle(
-      c,
-      l.scale * 38,
-      Paint()..color = const Color(0x33E64A19),
-    );
-    canvas.drawCircle(
-      c,
-      l.scale * 32,
-      Paint()..color = const Color(0xFFE64A19),
-    );
-    canvas.drawCircle(
-      c.translate(-l.sx(10), -l.sy(12)),
-      l.scale * 8,
-      Paint()..color = Colors.white.withValues(alpha: 0.22),
-    );
-    _drawText(
-      canvas,
-      '$syllableCount',
-      Offset(c.dx - l.sx(26), c.dy - l.sy(18)),
-      l.sx(52),
-      Colors.white,
-      24 * l.scale,
-      FontWeight.w800,
-      align: TextAlign.center,
-    );
-    _drawText(
-      canvas,
-      'klatschen',
-      Offset(c.dx - l.sx(32), c.dy + l.sy(13)),
-      l.sx(64),
-      Colors.white.withValues(alpha: 0.7),
-      8 * l.scale,
-      FontWeight.w600,
-      align: TextAlign.center,
-    );
+    final orb = l.orbRect;
+    if (orb != Rect.zero) {
+      final c = orb.center;
+      canvas.drawCircle(c, l.scale * 46, Paint()..color = const Color(0x1AE64A19));
+      canvas.drawCircle(c, l.scale * 38, Paint()..color = const Color(0x33E64A19));
+      canvas.drawCircle(c, l.scale * 32, Paint()..color = const Color(0xFFE64A19));
+      canvas.drawCircle(
+        c.translate(-l.sx(10), -l.sy(12)),
+        l.scale * 8,
+        Paint()..color = Colors.white.withValues(alpha: 0.22),
+      );
+      _drawText(
+        canvas,
+        '$syllableCount',
+        Offset(c.dx - l.sx(26), c.dy - l.sy(18)),
+        l.sx(52),
+        Colors.white,
+        22 * l.textScale, // Issue 2
+        FontWeight.w800,
+        align: TextAlign.center,
+      );
+      _drawText(
+        canvas,
+        'klatschen',
+        Offset(c.dx - l.sx(32), c.dy + l.sy(13)),
+        l.sx(64),
+        Colors.white.withValues(alpha: 0.7),
+        8 * l.textScale,
+        FontWeight.w600,
+        align: TextAlign.center,
+      );
+    } else {
+      // Orb ausgeblendet — Silbenzahl im Tablet (kleines Label)
+      // Kein extra Zeichnen nötig — syllableCount erscheint via _drawTaskTablet word
+    }
+
     _drawText(
       canvas,
       '↺ Zurücksetzen',
       l.resetRect.topLeft,
       l.resetRect.width,
       const Color(0xFF6A4828),
-      9 * l.scale,
+      11 * l.textScale, // Issue 2
       FontWeight.w700,
       align: TextAlign.center,
     );
@@ -1024,35 +1343,18 @@ class ForestQuestPainter extends CustomPainter {
 
   void _drawDotCountExercise(Canvas canvas, Size size, TaskModel task) {
     final l = _ForestQuestLayout(size, bottomInset);
-    final center = Offset(l.sx(140), l.sy(468));
-    canvas.drawCircle(
-      center,
-      l.scale * 34,
-      Paint()..color = const Color(0xFF4A2E00),
-    );
-    canvas.drawCircle(
-      center,
-      l.scale * 28,
-      Paint()..color = const Color(0xFF5D4037),
-    );
+    final center = Offset(l.sx(140), l.exerciseTop + l.exerciseH * 0.35);
+    canvas.drawCircle(center, l.scale * 34, Paint()..color = const Color(0xFF4A2E00));
+    canvas.drawCircle(center, l.scale * 28, Paint()..color = const Color(0xFF5D4037));
     final count = task.metadata['dotCount'] as int? ?? 0;
     final cols = math.min(5, math.max(1, count));
     for (var i = 0; i < count; i++) {
       final row = i ~/ cols;
       final col = i % cols;
-      final p =
-          center +
+      final p = center +
           Offset(l.sx((col - (cols - 1) / 2) * 10), l.sy((row - 0.5) * 10));
-      canvas.drawCircle(
-        p,
-        l.scale * 5,
-        Paint()..color = const Color(0x4DFFD700),
-      );
-      canvas.drawCircle(
-        p,
-        l.scale * 2.7,
-        Paint()..color = const Color(0xFFFFC107),
-      );
+      canvas.drawCircle(p, l.scale * 5, Paint()..color = const Color(0x4DFFD700));
+      canvas.drawCircle(p, l.scale * 2.7, Paint()..color = const Color(0xFFFFC107));
     }
     _drawNumberStones(canvas, size, _numberChoices(task));
   }
@@ -1066,24 +1368,13 @@ class ForestQuestPainter extends CustomPainter {
     for (final entry in l.numberStones(choices).entries) {
       final selected = currentAnswer?.toString() == entry.key.toString();
       if (selected) {
-        canvas.drawCircle(
-          entry.value,
-          l.scale * 24,
-          Paint()..color = const Color(0x44FF8F00),
-        );
+        canvas.drawCircle(entry.value, l.scale * 24, Paint()..color = const Color(0x44FF8F00));
       }
+      canvas.drawCircle(entry.value, l.scale * 20, Paint()..color = const Color(0xFF2D1500)); // Issue 3: 18→20
       canvas.drawCircle(
         entry.value,
-        l.scale * 18,
-        Paint()..color = const Color(0xFF2D1500),
-      );
-      canvas.drawCircle(
-        entry.value,
-        l.scale * 14,
-        Paint()
-          ..color = selected
-              ? const Color(0xFFFF8F00)
-              : const Color(0xFF4A2E00),
+        l.scale * 16,
+        Paint()..color = selected ? const Color(0xFFFF8F00) : const Color(0xFF4A2E00),
       );
       _drawText(
         canvas,
@@ -1091,7 +1382,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(entry.value.dx - l.sx(14), entry.value.dy - l.sy(9)),
         l.sx(28),
         selected ? const Color(0xFFFFF9C4) : const Color(0xFF7A5A40),
-        13 * l.scale,
+        17 * l.textScale, // Issue 2: 13→17
         FontWeight.w800,
         align: TextAlign.center,
       );
@@ -1108,34 +1399,46 @@ class ForestQuestPainter extends CustomPainter {
 
   void _drawPatternExercise(Canvas canvas, Size size, TaskModel task) {
     final l = _ForestQuestLayout(size, bottomInset);
-    final visible =
-        (task.metadata['visible'] as List?)?.cast<String>() ?? const [];
+    final exH = l.exerciseH;
+    final symbolSize = exH < 140 * l.scale ? 18 * l.scale : 22 * l.scale; // Issue 3
+    final visible = (task.metadata['visible'] as List?)?.cast<String>() ?? const [];
     final start = 140 - visible.length * 20;
+    final patternY = l.exerciseTop + symbolSize / 2 + 6 * l.scale;
     for (var i = 0; i < visible.length; i++) {
-      _drawSymbol(
-        canvas,
-        l,
-        visible[i],
-        Offset(l.sx(start + i * 40), l.sy(460)),
-        l.scale,
-        const Color(0xFFFFD700),
-      );
+      _drawSymbol(canvas, l, visible[i],
+          Offset(l.sx(start + i * 40), patternY), l.scale, const Color(0xFFFFD700));
     }
-    final missing = Offset(l.sx(start + visible.length * 40), l.sy(460));
-    canvas.drawCircle(
-      missing,
-      l.scale * 13,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = l.scale * 2,
-    );
+    final missing = Offset(l.sx(start + visible.length * 40), patternY);
+    // Gestrichelter Platzhalter (Issue 3)
+    final phRect = Rect.fromCenter(center: missing, width: symbolSize, height: symbolSize);
+    final dashPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = l.scale * 1.5;
+    _drawDashedRRect(canvas, RRect.fromRectAndRadius(phRect, Radius.circular(4 * l.scale)), dashPaint);
     _drawAnswerStones(
       canvas,
       size,
       (task.metadata['choices'] as List?)?.cast<dynamic>() ?? const [],
       symbols: true,
     );
+  }
+
+  void _drawDashedRRect(Canvas canvas, RRect rrect, Paint paint) {
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+    for (final m in metrics) {
+      double dist = 0;
+      bool draw = true;
+      while (dist < m.length) {
+        final len = draw ? 4.0 : 3.0;
+        if (draw) {
+          canvas.drawPath(m.extractPath(dist, (dist + len).clamp(0, m.length)), paint);
+        }
+        dist += len;
+        draw = !draw;
+      }
+    }
   }
 
   void _drawAnswerStones(
@@ -1147,14 +1450,10 @@ class ForestQuestPainter extends CustomPainter {
     final l = _ForestQuestLayout(size, bottomInset);
     for (final entry in l.answerStones(choices).entries) {
       final selected = currentAnswer == entry.key;
-      Color inner = selected
-          ? const Color(0xFF6D3B17)
-          : const Color(0xFF5D4037);
+      Color inner = selected ? const Color(0xFF6D3B17) : const Color(0xFF5D4037);
       Color text = selected ? const Color(0xFFFFD700) : const Color(0xFFE8D5A8);
       if (lastCorrect != null && selected) {
-        inner = lastCorrect!
-            ? const Color(0xFF1B4D1B)
-            : const Color(0xFF4A1010);
+        inner = lastCorrect! ? const Color(0xFF1B4D1B) : const Color(0xFF4A1010);
         text = lastCorrect! ? const Color(0xFFA5D6A7) : const Color(0xFFFF5252);
       }
       canvas.drawRRect(
@@ -1167,14 +1466,7 @@ class ForestQuestPainter extends CustomPainter {
         Paint()..color = inner,
       );
       if (symbols) {
-        _drawSymbol(
-          canvas,
-          l,
-          entry.key.toString(),
-          innerRect.center,
-          l.scale * 0.7,
-          text,
-        );
+        _drawSymbol(canvas, l, entry.key.toString(), innerRect.center, l.scale * 0.7, text);
       } else {
         _drawText(
           canvas,
@@ -1182,7 +1474,7 @@ class ForestQuestPainter extends CustomPainter {
           Offset(innerRect.left + l.sx(5), innerRect.top + l.sy(9)),
           innerRect.width - l.sx(10),
           text,
-          12 * l.scale,
+          13 * l.textScale, // Issue 2: 12→13
           FontWeight.w800,
           align: TextAlign.center,
           maxLines: 1,
@@ -1199,10 +1491,7 @@ class ForestQuestPainter extends CustomPainter {
       Paint()..color = const Color(0xFF1E0D00),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        frame.deflate(l.sx(4)),
-        Radius.circular(6 * l.scale),
-      ),
+      RRect.fromRectAndRadius(frame.deflate(l.sx(4)), Radius.circular(6 * l.scale)),
       Paint()
         ..color = const Color(0xFF3E2108)
         ..style = PaintingStyle.stroke
@@ -1214,10 +1503,7 @@ class ForestQuestPainter extends CustomPainter {
       Paint()..color = const Color(0xFF1B5E20),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        r.deflate(3 * l.scale),
-        Radius.circular(5 * l.scale),
-      ),
+      RRect.fromRectAndRadius(r.deflate(3 * l.scale), Radius.circular(5 * l.scale)),
       Paint()..color = const Color(0xFF2E7D32),
     );
     _drawText(
@@ -1226,11 +1512,15 @@ class ForestQuestPainter extends CustomPainter {
       Offset(r.left, r.top + l.sy(6)),
       r.width,
       const Color(0xFFE8F5E9),
-      13 * l.scale,
+      15 * l.textScale, // Issue 2: 13→15
       FontWeight.w800,
       align: TextAlign.center,
     );
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // NAVIGATION
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawNavigation(Canvas canvas, Size size) {
     final l = _ForestQuestLayout(size, bottomInset);
@@ -1245,7 +1535,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(l.backCenter.dx - l.sx(8), l.backCenter.dy - l.sy(12)),
       l.sx(16),
       Colors.white,
-      20 * l.scale,
+      16 * l.textScale, // Issue 2: 20→16
       FontWeight.w800,
       align: TextAlign.center,
     );
@@ -1257,7 +1547,7 @@ class ForestQuestPainter extends CustomPainter {
           RRect.fromRectAndRadius(
             Rect.fromCenter(
               center: Offset(x, y),
-              width: l.sx(22),
+              width: 20 * l.scale, // Issue 3: elongated rect
               height: l.sy(8),
             ),
             Radius.circular(4 * l.scale),
@@ -1267,7 +1557,7 @@ class ForestQuestPainter extends CustomPainter {
       } else {
         canvas.drawCircle(
           Offset(x, y),
-          l.scale * 4,
+          4 * l.scale, // Issue 3: dot radius
           Paint()
             ..color = i < progressIndex
                 ? Colors.white.withValues(alpha: 0.85)
@@ -1277,46 +1567,9 @@ class ForestQuestPainter extends CustomPainter {
     }
   }
 
-  void _drawSymbol(
-    Canvas canvas,
-    _ForestQuestLayout l,
-    String raw,
-    Offset center,
-    double sc,
-    Color color,
-  ) {
-    final value = raw.toLowerCase();
-    final paint = Paint()..color = color;
-    if (value.contains('triangle') ||
-        value.contains('🔺') ||
-        value == 'dreieck') {
-      canvas.drawPath(
-        Path()
-          ..moveTo(center.dx, center.dy - 12 * sc)
-          ..lineTo(center.dx - 12 * sc, center.dy + 10 * sc)
-          ..lineTo(center.dx + 12 * sc, center.dy + 10 * sc)
-          ..close(),
-        paint,
-      );
-    } else if (value.contains('square') ||
-        value.contains('🟥') ||
-        value == 'quadrat') {
-      canvas.drawRect(
-        Rect.fromCenter(center: center, width: 22 * sc, height: 22 * sc),
-        paint,
-      );
-    } else if (value.contains('dot') || value == 'punkt') {
-      canvas.drawCircle(center, 5 * sc, paint);
-    } else {
-      canvas.drawCircle(
-        center,
-        12 * sc,
-        paint
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3 * sc,
-      );
-    }
-  }
+  // ══════════════════════════════════════════════════════════════════════════
+  // CHARAKTERE
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _drawFino(Canvas canvas, double cx, double cy, double scale) {
     canvas.save();
@@ -1324,46 +1577,26 @@ class ForestQuestPainter extends CustomPainter {
     _drawRotatedOval(
       canvas,
       Offset(16 * scale, 10 * scale),
-      15 * scale,
-      8 * scale,
-      0.3,
+      15 * scale, 8 * scale, 0.3,
       const Color(0xFFD84315),
     );
     _drawRotatedOval(
       canvas,
       Offset(25 * scale, 14 * scale),
-      6 * scale,
-      4 * scale,
-      0.3,
+      6 * scale, 4 * scale, 0.3,
       const Color(0xFFFFFDE7),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, 5 * scale),
-        width: 26 * scale,
-        height: 20 * scale,
-      ),
+      Rect.fromCenter(center: Offset(0, 5 * scale), width: 26 * scale, height: 20 * scale),
       Paint()..color = const Color(0xFFE64A19),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, 7 * scale),
-        width: 14 * scale,
-        height: 14 * scale,
-      ),
+      Rect.fromCenter(center: Offset(0, 7 * scale), width: 14 * scale, height: 14 * scale),
       Paint()..color = const Color(0xFFFFFDE7),
     );
-    canvas.drawCircle(
-      Offset(0, -8 * scale),
-      12 * scale,
-      Paint()..color = const Color(0xFFEF6C00),
-    );
+    canvas.drawCircle(Offset(0, -8 * scale), 12 * scale, Paint()..color = const Color(0xFFEF6C00));
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, -6 * scale),
-        width: 14 * scale,
-        height: 16 * scale,
-      ),
+      Rect.fromCenter(center: Offset(0, -6 * scale), width: 14 * scale, height: 16 * scale),
       Paint()..color = const Color(0xFFFFFDE7),
     );
     for (final sign in const [-1.0, 1.0]) {
@@ -1387,96 +1620,153 @@ class ForestQuestPainter extends CustomPainter {
     final eyePaint = Paint()..color = const Color(0xFF1A1A1A);
     canvas.drawCircle(Offset(-4 * scale, -9 * scale), 2.5 * scale, eyePaint);
     canvas.drawCircle(Offset(4 * scale, -9 * scale), 2.5 * scale, eyePaint);
-    canvas.drawCircle(
-      Offset(-3 * scale, -10 * scale),
-      scale,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      Offset(5 * scale, -10 * scale),
-      scale,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(Offset(-3 * scale, -10 * scale), scale, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(5 * scale, -10 * scale), scale, Paint()..color = Colors.white);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, -4 * scale),
-        width: 5 * scale,
-        height: 4 * scale,
-      ),
+      Rect.fromCenter(center: Offset(0, -4 * scale), width: 5 * scale, height: 4 * scale),
       eyePaint,
     );
     canvas.restore();
   }
 
-  void _drawBrumm(Canvas canvas, double cx, double cy, double scale) {
+  void _drawBrumm(Canvas canvas, double cx, double cy, double scale,
+      {double celebProgress = 0}) {
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, cy + 8 * scale),
-        width: 36 * scale,
-        height: 44 * scale,
-      ),
+      Rect.fromCenter(center: Offset(cx, cy + 8 * scale), width: 36 * scale, height: 44 * scale),
       Paint()..color = const Color(0xFF795548),
     );
-    canvas.drawCircle(
-      Offset(cx, cy - 18 * scale),
-      20 * scale,
-      Paint()..color = const Color(0xFF795548),
-    );
-    canvas.drawCircle(
-      Offset(cx - 14 * scale, cy - 34 * scale),
-      8 * scale,
-      Paint()..color = const Color(0xFF6D4C41),
-    );
-    canvas.drawCircle(
-      Offset(cx + 14 * scale, cy - 34 * scale),
-      8 * scale,
-      Paint()..color = const Color(0xFF6D4C41),
-    );
+    canvas.drawCircle(Offset(cx, cy - 18 * scale), 20 * scale, Paint()..color = const Color(0xFF795548));
+    canvas.drawCircle(Offset(cx - 14 * scale, cy - 34 * scale), 8 * scale, Paint()..color = const Color(0xFF6D4C41));
+    canvas.drawCircle(Offset(cx + 14 * scale, cy - 34 * scale), 8 * scale, Paint()..color = const Color(0xFF6D4C41));
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, cy - 12 * scale),
-        width: 22 * scale,
-        height: 14 * scale,
-      ),
+      Rect.fromCenter(center: Offset(cx, cy - 12 * scale), width: 22 * scale, height: 14 * scale),
       Paint()..color = const Color(0xFFA1887F),
     );
     final eye = Paint()..color = const Color(0xFF1A1A1A);
-    canvas.drawCircle(
-      Offset(cx - 7 * scale, cy - 21 * scale),
-      2.4 * scale,
-      eye,
-    );
-    canvas.drawCircle(
-      Offset(cx + 7 * scale, cy - 21 * scale),
-      2.4 * scale,
-      eye,
-    );
-    canvas.drawCircle(
-      Offset(cx - 6 * scale, cy - 22 * scale),
-      0.8 * scale,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      Offset(cx + 8 * scale, cy - 22 * scale),
-      0.8 * scale,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(Offset(cx - 7 * scale, cy - 21 * scale), 2.4 * scale, eye);
+    canvas.drawCircle(Offset(cx + 7 * scale, cy - 21 * scale), 2.4 * scale, eye);
+    canvas.drawCircle(Offset(cx - 6 * scale, cy - 22 * scale), 0.8 * scale, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(cx + 8 * scale, cy - 22 * scale), 0.8 * scale, Paint()..color = Colors.white);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, cy - 12 * scale),
-        width: 7 * scale,
-        height: 5 * scale,
-      ),
+      Rect.fromCenter(center: Offset(cx, cy - 12 * scale), width: 7 * scale, height: 5 * scale),
       Paint()..color = const Color(0xFF3E2108),
     );
+
+    // Arme (animiert bei Jubel)
+    final armPaint = Paint()
+      ..color = const Color(0xFF795548)
+      ..strokeWidth = 5 * scale
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    double armAngle = 0.0;
+    if (celebProgress > 0) {
+      const raiseFrac = 0.4 / 1.4;
+      const holdFrac = 1.0 / 1.4;
+      if (celebProgress < raiseFrac) {
+        armAngle = (celebProgress / raiseFrac) * (math.pi / 4);
+      } else if (celebProgress < holdFrac) {
+        armAngle = math.pi / 4;
+      } else {
+        final p = (celebProgress - holdFrac) / (1 - holdFrac);
+        armAngle = (1 - p) * (math.pi / 4);
+      }
+    }
+    // Linker Arm
+    final lsx = cx - 18 * scale;
+    final lsy = cy - 5 * scale;
+    canvas.drawLine(
+      Offset(lsx, lsy),
+      Offset(lsx - math.cos(math.pi / 6 + armAngle) * 14 * scale,
+          lsy - math.sin(math.pi / 6 + armAngle) * 14 * scale),
+      armPaint,
+    );
+    // Rechter Arm
+    final rsx = cx + 18 * scale;
+    final rsy = cy - 5 * scale;
+    canvas.drawLine(
+      Offset(rsx, rsy),
+      Offset(rsx + math.cos(math.pi / 6 + armAngle) * 14 * scale,
+          rsy - math.sin(math.pi / 6 + armAngle) * 14 * scale),
+      armPaint,
+    );
+
+    // Sterne bei Jubel
+    if (celebProgress > 0) {
+      final starScaleFactor = (celebProgress < 0.4 / 1.4)
+          ? (celebProgress / (0.4 / 1.4)).clamp(0.0, 1.0)
+          : 1.0 - ((celebProgress - 0.4 / 1.4) / (1 - 0.4 / 1.4)).clamp(0.0, 0.3);
+      final starPaint = Paint()..color = const Color(0xFFFFD700);
+      for (final pos in [
+        Offset(cx - 22 * scale, cy - 45 * scale),
+        Offset(cx + 22 * scale, cy - 45 * scale),
+        Offset(cx - 28 * scale, cy - 28 * scale),
+        Offset(cx + 28 * scale, cy - 28 * scale),
+      ]) {
+        canvas.save();
+        canvas.translate(pos.dx, pos.dy);
+        canvas.scale(starScaleFactor, starScaleFactor);
+        _drawStar(canvas, Offset.zero, 6 * scale, starPaint);
+        canvas.restore();
+      }
+    }
   }
 
-  void _drawOva(Canvas canvas, double cx, double cy, double scale) {
-    canvas.drawCircle(
-      Offset(cx, cy),
-      14 * scale,
-      Paint()..color = const Color(0xFFFF8F00),
-    );
+  void _drawOva(Canvas canvas, double cx, double cy, double scale,
+      {double wingProgress = 0}) {
+    // Flügel (animiert)
+    if (wingProgress > 0) {
+      final wingAngle = math.sin(wingProgress * math.pi) * (-35 * math.pi / 180);
+      final outerPaint = Paint()..color = const Color(0xFFFF8F00);
+      final innerPaint = Paint()..color = const Color(0xFFFFB300);
+      // Linker Flügel
+      canvas.save();
+      canvas.translate(cx - 9 * scale, cy);
+      canvas.rotate(wingAngle);
+      canvas.drawPath(
+        Path()
+          ..moveTo(0, 0)
+          ..lineTo(-10 * scale, -2 * scale)
+          ..lineTo(-12 * scale, -8 * scale)
+          ..lineTo(-4 * scale, -6 * scale)
+          ..close(),
+        outerPaint,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(-2 * scale, -1 * scale)
+          ..lineTo(-8 * scale, -3 * scale)
+          ..lineTo(-9 * scale, -6 * scale)
+          ..lineTo(-3 * scale, -4 * scale)
+          ..close(),
+        innerPaint,
+      );
+      canvas.restore();
+      // Rechter Flügel
+      canvas.save();
+      canvas.translate(cx + 9 * scale, cy);
+      canvas.rotate(-wingAngle);
+      canvas.drawPath(
+        Path()
+          ..moveTo(0, 0)
+          ..lineTo(10 * scale, -2 * scale)
+          ..lineTo(12 * scale, -8 * scale)
+          ..lineTo(4 * scale, -6 * scale)
+          ..close(),
+        outerPaint,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(2 * scale, -1 * scale)
+          ..lineTo(8 * scale, -3 * scale)
+          ..lineTo(9 * scale, -6 * scale)
+          ..lineTo(3 * scale, -4 * scale)
+          ..close(),
+        innerPaint,
+      );
+      canvas.restore();
+    }
+
+    canvas.drawCircle(Offset(cx, cy), 14 * scale, Paint()..color = const Color(0xFFFF8F00));
     canvas.drawPath(
       Path()
         ..moveTo(cx - 9 * scale, cy - 11 * scale)
@@ -1496,16 +1786,8 @@ class ForestQuestPainter extends CustomPainter {
     final eye = Paint()..color = const Color(0xFF1A1A1A);
     canvas.drawCircle(Offset(cx - 5 * scale, cy - 2 * scale), 2.4 * scale, eye);
     canvas.drawCircle(Offset(cx + 5 * scale, cy - 2 * scale), 2.4 * scale, eye);
-    canvas.drawCircle(
-      Offset(cx - 4 * scale, cy - 3 * scale),
-      0.8 * scale,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      Offset(cx + 6 * scale, cy - 3 * scale),
-      0.8 * scale,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(Offset(cx - 4 * scale, cy - 3 * scale), 0.8 * scale, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(cx + 6 * scale, cy - 3 * scale), 0.8 * scale, Paint()..color = Colors.white);
     canvas.drawPath(
       Path()
         ..moveTo(cx, cy + 2 * scale)
@@ -1514,6 +1796,63 @@ class ForestQuestPainter extends CustomPainter {
         ..close(),
       Paint()..color = const Color(0xFFFF8F00),
     );
+  }
+
+  // ── Stern-Form ─────────────────────────────────────────────────────────────
+
+  void _drawStar(Canvas canvas, Offset center, double radius, Paint paint) {
+    final path = Path();
+    for (var i = 0; i < 10; i++) {
+      final angle = (i * math.pi / 5) - math.pi / 2;
+      final r = i.isEven ? radius : radius * 0.4;
+      final x = center.dx + math.cos(angle) * r;
+      final y = center.dy + math.sin(angle) * r;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SONSTIGES
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void _drawSymbol(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    String raw,
+    Offset center,
+    double sc,
+    Color color,
+  ) {
+    final value = raw.toLowerCase();
+    final paint = Paint()..color = color;
+    if (value.contains('triangle') || value.contains('🔺') || value == 'dreieck') {
+      canvas.drawPath(
+        Path()
+          ..moveTo(center.dx, center.dy - 12 * sc)
+          ..lineTo(center.dx - 12 * sc, center.dy + 10 * sc)
+          ..lineTo(center.dx + 12 * sc, center.dy + 10 * sc)
+          ..close(),
+        paint,
+      );
+    } else if (value.contains('square') || value.contains('🟥') || value == 'quadrat') {
+      canvas.drawRect(Rect.fromCenter(center: center, width: 22 * sc, height: 22 * sc), paint);
+    } else if (value.contains('dot') || value == 'punkt') {
+      canvas.drawCircle(center, 5 * sc, paint);
+    } else {
+      canvas.drawCircle(
+        center,
+        12 * sc,
+        paint
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 * sc,
+      );
+    }
   }
 
   void _drawRotatedOval(
@@ -1564,14 +1903,6 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant ForestQuestPainter oldDelegate) {
-    return oldDelegate.currentAnswer != currentAnswer ||
-        oldDelegate.syllableCount != syllableCount ||
-        oldDelegate.task != task ||
-        oldDelegate.hintText != hintText ||
-        oldDelegate.lastCorrect != lastCorrect ||
-        oldDelegate.questNode.id != questNode.id ||
-        oldDelegate.progressIndex != progressIndex ||
-        oldDelegate.bottomInset != bottomInset;
-  }
+  // Always repaint — Ticker drives continuous animation.
+  bool shouldRepaint(covariant ForestQuestPainter _) => true;
 }
