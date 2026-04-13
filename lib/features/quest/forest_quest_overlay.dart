@@ -524,9 +524,6 @@ class _ForestQuestLayout {
   double get scaleY => size.height / 560;
   double get scale => math.min(scaleX, scaleY);
 
-  /// Textgröße immer an Breite gebunden (nicht min mit Höhe).
-  double get textScale => scaleX;
-
   double sx(double value) => value * scaleX;
   double sy(double value) => value * scaleY;
 
@@ -1176,7 +1173,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(r.left + l.sx(48), r.top + l.sy(12)),
       l.sx(180),
       const Color(0xFFFF8F00),
-      11 * l.textScale, // Issue 2: textScale statt l.scale
+      9 * l.scale,
       FontWeight.w700,
     );
     _drawText(
@@ -1185,7 +1182,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(r.left + l.sx(48), r.top + l.sy(28)),
       l.sx(176),
       const Color(0xFFE8D5B0),
-      12 * l.textScale, // Issue 2
+      10 * l.scale,
       FontWeight.w500,
       maxLines: 2,
     );
@@ -1235,7 +1232,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(inner.left + l.sx(10), inner.top + l.sy(12)),
       inner.width - l.sx(20),
       const Color(0xFFE8D5A8),
-      13 * l.textScale, // Issue 2: 11 → 13 * textScale
+      11 * l.scale,
       FontWeight.w700,
       align: TextAlign.center,
       maxLines: 2,
@@ -1247,7 +1244,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(inner.left + l.sx(10), inner.top + l.sy(40)),
         inner.width - l.sx(20),
         const Color(0xFFFF8F00),
-        22 * l.textScale, // Issue 2: 20 → 22 * textScale
+        20 * l.scale,
         FontWeight.w800,
         align: TextAlign.center,
         maxLines: 1,
@@ -1259,7 +1256,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(inner.left + l.sx(10), inner.top + l.sy(40)),
         inner.width - l.sx(20),
         const Color(0xFFFF8F00),
-        22 * l.textScale, // Issue 2
+        20 * l.scale,
         FontWeight.w800,
         align: TextAlign.center,
         maxLines: 1,
@@ -1309,7 +1306,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(c.dx - l.sx(26), c.dy - l.sy(18)),
         l.sx(52),
         Colors.white,
-        22 * l.textScale, // Issue 2
+        24 * l.scale,
         FontWeight.w800,
         align: TextAlign.center,
       );
@@ -1319,7 +1316,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(c.dx - l.sx(32), c.dy + l.sy(13)),
         l.sx(64),
         Colors.white.withValues(alpha: 0.7),
-        8 * l.textScale,
+        8 * l.scale,
         FontWeight.w600,
         align: TextAlign.center,
       );
@@ -1334,7 +1331,7 @@ class ForestQuestPainter extends CustomPainter {
       l.resetRect.topLeft,
       l.resetRect.width,
       const Color(0xFF6A4828),
-      11 * l.textScale, // Issue 2
+      9 * l.scale,
       FontWeight.w700,
       align: TextAlign.center,
     );
@@ -1382,7 +1379,7 @@ class ForestQuestPainter extends CustomPainter {
         Offset(entry.value.dx - l.sx(14), entry.value.dy - l.sy(9)),
         l.sx(28),
         selected ? const Color(0xFFFFF9C4) : const Color(0xFF7A5A40),
-        17 * l.textScale, // Issue 2: 13→17
+        13 * l.scale,
         FontWeight.w800,
         align: TextAlign.center,
       );
@@ -1474,7 +1471,7 @@ class ForestQuestPainter extends CustomPainter {
           Offset(innerRect.left + l.sx(5), innerRect.top + l.sy(9)),
           innerRect.width - l.sx(10),
           text,
-          13 * l.textScale, // Issue 2: 12→13
+          12 * l.scale,
           FontWeight.w800,
           align: TextAlign.center,
           maxLines: 1,
@@ -1512,7 +1509,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(r.left, r.top + l.sy(6)),
       r.width,
       const Color(0xFFE8F5E9),
-      15 * l.textScale, // Issue 2: 13→15
+      13 * l.scale,
       FontWeight.w800,
       align: TextAlign.center,
     );
@@ -1535,7 +1532,7 @@ class ForestQuestPainter extends CustomPainter {
       Offset(l.backCenter.dx - l.sx(8), l.backCenter.dy - l.sy(12)),
       l.sx(16),
       Colors.white,
-      16 * l.textScale, // Issue 2: 20→16
+      20 * l.scale,
       FontWeight.w800,
       align: TextAlign.center,
     );

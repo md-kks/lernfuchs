@@ -14,7 +14,7 @@ class WorldMapNodeComponent extends PositionComponent
   final int nodeIndex;
 
   WorldMapNodeComponent({required this.questNode, required this.nodeIndex})
-    : super(size: Vector2.all(80), anchor: Anchor.center, priority: 1);
+    : super(size: Vector2.all(100), anchor: Anchor.center, priority: 1);
 
   @override
   Future<void> onLoad() async {
@@ -41,11 +41,11 @@ class WorldMapNodeComponent extends PositionComponent
   }
 
   void _drawPlatform(Canvas canvas, double sc) {
-    final r = 27 * sc;
+    final r = 32 * sc;
 
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(4 * sc, 7 * sc),
+        center: Offset(4 * sc, 8 * sc),
         width: r * 2,
         height: r * 0.76,
       ),
@@ -53,10 +53,10 @@ class WorldMapNodeComponent extends PositionComponent
     );
 
     if (questNode.state == QuestNodeState.current) {
-      _drawRing(canvas, r + 11 * sc, 6 * sc, const Color(0x73FFB400));
-      _drawRing(canvas, r + 5 * sc, 3 * sc, const Color(0xB3FFC832));
+      _drawRing(canvas, r + 12 * sc, 7 * sc, const Color(0x73FFB400));
+      _drawRing(canvas, r + 5 * sc, 3.5 * sc, const Color(0xB3FFC832));
     } else if (questNode.state == QuestNodeState.available) {
-      _drawRing(canvas, r + 8 * sc, 4 * sc, const Color(0x7382DC5A));
+      _drawRing(canvas, r + 9 * sc, 5 * sc, const Color(0x7382DC5A));
     }
 
     final outerColor = switch (questNode.state) {
@@ -241,7 +241,7 @@ class WorldMapNodeComponent extends PositionComponent
   }
 
   void _drawLabel(Canvas canvas, double sc) {
-    final py = 32 * sc;
+    final py = 40 * sc;
     final textColor = switch (questNode.state) {
       QuestNodeState.locked => const Color(0xFF9EC8D5),
       QuestNodeState.completed => const Color(0xFFFFD180),
@@ -257,7 +257,7 @@ class WorldMapNodeComponent extends PositionComponent
         text: questNode.label,
         style: TextStyle(
           color: textColor,
-          fontSize: 12 * sc,
+          fontSize: 14 * sc,
           fontWeight: FontWeight.bold,
         ),
       ),
