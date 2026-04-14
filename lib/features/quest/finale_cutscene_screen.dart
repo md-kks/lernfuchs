@@ -210,7 +210,8 @@ class _FinalePainter extends CustomPainter {
     _drawGradient(canvas, size, const Color(0xFF111827), const Color(0xFF31553A));
     final center = Offset(size.width / 2, size.height * 0.48);
     _drawGreatBook(canvas, center, 1.5 * sc, glow: true);
-    final shadowScale = (1 - ((t - 0.35) / 0.35).clamp(0, 1)).clamp(0.0, 1.0);
+    final shadowScale =
+        (1.0 - ((t - 0.35) / 0.35).clamp(0.0, 1.0)).clamp(0.0, 1.0);
     canvas.drawPath(
       Path()
         ..moveTo(size.width / 2 - 54 * sc * shadowScale, size.height * 0.24)

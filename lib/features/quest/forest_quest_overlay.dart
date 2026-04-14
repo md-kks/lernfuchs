@@ -1593,7 +1593,11 @@ class ForestQuestPainter extends CustomPainter {
         const Color(0xFFFFD700),
       );
     }
-    _drawPatternTiles(canvas, size, _answerChoices(task));
+    _drawPatternTiles(
+      canvas,
+      size,
+      (task.metadata['choices'] as List?)?.cast<dynamic>() ?? const [],
+    );
     if (currentAnswer != null) _drawPatternConfirm(canvas, l);
   }
 
