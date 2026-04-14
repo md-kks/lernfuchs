@@ -76,3 +76,4 @@ assets/
 | [docs/meta_progression.md](docs/meta_progression.md) | Inventar, Baumhaus-Upgrades |
 | [docs/daily_path.md](docs/daily_path.md) | Tages-Pfad-Logik |
 | [docs/world1_vertical_slice.md](docs/world1_vertical_slice.md) | World 1 Playable Slice |
+| [docs/lernfuchs_2_systems.md](docs/lernfuchs_2_systems.md) | LernFuchs 2.0 Story-, Daily-, Expedition-, Accessibility-, School-, Baumhaus- und Finale-Systeme |

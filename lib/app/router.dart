@@ -1,16 +1,18 @@
 import 'package:go_router/go_router.dart';
 import '../core/services/storage_service.dart';
-import '../features/home/baumhaus_screen.dart';
+import '../features/baumhaus/baumhaus_screen.dart';
 import '../features/home/daily_path_screen.dart';
 import '../features/home/free_practice_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/home/shell_placeholder_screen.dart';
 import '../features/home/world_map_screen.dart';
+import '../features/onboarding/child_onboarding_screen.dart';
+import '../features/onboarding/parent_onboarding_screen.dart';
+import '../features/onboarding/placement_screen.dart';
 import '../features/subject_overview/subject_overview_screen.dart';
 import '../features/exercise/exercise_screen.dart';
 import '../features/progress/progress_screen.dart';
 import '../features/settings/settings_screen.dart';
-import '../features/settings/onboarding_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/worksheet/worksheet_screen.dart';
 import '../features/parent/parent_dashboard_screen.dart';
@@ -18,14 +20,16 @@ import '../features/parent/parent_dashboard_screen.dart';
 /// Zentraler App-Router (go_router).
 ///
 /// ### Onboarding-Redirect
-/// Solange [AppSettings.onboardingDone] `false` ist, leitet der `redirect`-
-/// Callback jeden Navigationsversuch automatisch nach `/onboarding` um.
-/// Ist Onboarding abgeschlossen, wird `null` zurückgegeben (kein Redirect).
+/// Solange `placement_completed` `false` ist, leitet der `redirect`-
+/// Callback jeden Navigationsversuch automatisch nach `/onboarding/parent` um.
+/// Ist die Einstufung abgeschlossen, wird `null` zurückgegeben (kein Redirect).
 ///
 /// ### Routen-Übersicht
 /// | Pfad                                           | Screen                     |
 /// |------------------------------------------------|----------------------------|
-/// | `/onboarding`                                  | [OnboardingScreen]         |
+/// | `/onboarding/parent`                           | [ParentOnboardingScreen]   |
+/// | `/onboarding/child`                            | [ChildOnboardingScreen]    |
+/// | `/onboarding/placement`                        | [PlacementScreen]          |
 /// | `/home`                                        | [HomeScreen]               |
 /// | `/home/freies-ueben`                           | [FreePracticeScreen]       |
 /// | `/home/baumhaus`                               | [BaumhausScreen]           |
@@ -42,15 +46,34 @@ import '../features/parent/parent_dashboard_screen.dart';
 final appRouter = GoRouter(
   initialLocation: '/home',
   redirect: (context, state) {
-    final onboardingDone = StorageService.instance.settings.onboardingDone;
+    final placementDone = StorageService.instance.placementCompleted;
     final going = state.matchedLocation;
-    if (!onboardingDone && going != '/onboarding') {
-      return '/onboarding';
+    final inOnboarding = going.startsWith('/onboarding');
+    if (!placementDone && !inOnboarding) {
+      return '/onboarding/parent';
+    }
+    if (placementDone && inOnboarding) {
+      return '/home';
     }
     return null;
   },
   routes: [
-    GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
+    GoRoute(
+      path: '/onboarding',
+      redirect: (_, _) => '/onboarding/parent',
+    ),
+    GoRoute(
+      path: '/onboarding/parent',
+      builder: (_, _) => const ParentOnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding/child',
+      builder: (_, _) => const ChildOnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding/placement',
+      builder: (_, _) => const PlacementScreen(),
+    ),
     GoRoute(
       path: '/home',
       builder: (_, _) => const HomeScreen(),

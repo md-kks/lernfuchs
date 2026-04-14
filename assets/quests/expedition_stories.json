@@ -1,0 +1,63 @@
+{
+  "expeditions": [
+    {
+      "worldId": "fluesterwald",
+      "stories": [
+        {
+          "storyId": "fluesterwald_exp_1",
+          "title": "Der Nebelschatten kehrt zurück",
+          "intro": [
+            {
+              "speaker": "ova",
+              "animation": "land_on_branch",
+              "text": "Fino! Ich habe schlechte Nachrichten. Der Nebelschatten ist zurückgekehrt!"
+            },
+            {
+              "speaker": "brumm",
+              "animation": "point_at_map",
+              "text": "Drei Orte im Flüsterwald sind wieder verdunkelt. Wir brauchen deine Hilfe!"
+            }
+          ],
+          "outro": "Fantastisch! Der Flüsterwald ist wieder frei!",
+          "eligibleStations": ["waldeingang", "lichtung", "alter_baum", "bruecke", "waldsee"]
+        },
+        {
+          "storyId": "fluesterwald_exp_2",
+          "title": "Brumms Brief",
+          "intro": [
+            {
+              "speaker": "fino",
+              "animation": "hold_letter",
+              "text": "Brumm hat mir einen Brief geschickt! Er braucht Hilfe an drei Stellen."
+            },
+            {
+              "speaker": "ova",
+              "animation": "wing_flap",
+              "text": "Dann los, Fino! Der Flüsterwald wartet auf dich!"
+            }
+          ],
+          "outro": "Brumm ist so dankbar! Du hast den Wald gerettet!",
+          "eligibleStations": ["waldeingang", "lichtung", "alter_baum", "bruecke", "waldsee"]
+        },
+        {
+          "storyId": "fluesterwald_exp_3",
+          "title": "Ovas Meisterprüfung",
+          "intro": [
+            {
+              "speaker": "ova",
+              "animation": "perch_proud",
+              "text": "Fino, ich möchte sehen wie viel du gelernt hast. Drei Prüfungen warten auf dich!"
+            },
+            {
+              "speaker": "fino",
+              "animation": "look_confident",
+              "text": "Ich bin bereit, Ova. Lass uns beginnen!"
+            }
+          ],
+          "outro": "Du hast alle Prüfungen bestanden! Ich bin so stolz auf dich!",
+          "eligibleStations": ["waldeingang", "lichtung", "alter_baum", "bruecke", "waldsee"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -30,11 +32,12 @@ class StoryPopupComponent extends PositionComponent
   void render(Canvas canvas) {
     final screen = Size(game.size.x, game.size.y);
     final sc = WorldMapBackground.uniformScale(game.size);
+    final dyslexia = game.accessibility.dyslexiaMode;
     final nodePoint = WorldMapBackground.nodePositionToVector(
       screen,
       nodeIndex,
     );
-    final popupSize = Size(182 * sc, 104 * sc);
+    final popupSize = Size(math.min(screen.width * 0.72, 280 * sc), 126 * sc);
     final below = nodePoint.y <= screen.height * 0.5;
     var left = nodePoint.x + 34 * sc;
     var top = below
@@ -45,42 +48,61 @@ class StoryPopupComponent extends PositionComponent
 
     final rect = Rect.fromLTWH(left, top, popupSize.width, popupSize.height);
     final outer = RRect.fromRectAndRadius(rect, Radius.circular(8 * sc));
-    final border = Paint()
-      ..color = const Color(0xFFFF8F00)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3 * sc;
-    canvas.drawRRect(outer, Paint()..color = const Color(0xED0F0800));
-    canvas.drawRRect(outer, border);
-    canvas.drawCircle(
-      Offset(rect.left + 15 * sc, rect.top + 16 * sc),
-      6 * sc,
-      Paint()..color = const Color(0xFFE64A19),
+    final postPaint = Paint()
+      ..color = const Color(0xFF5D4037)
+      ..strokeWidth = 2 * sc;
+    canvas.drawLine(Offset(rect.left + 24 * sc, rect.bottom), Offset(nodePoint.x - 5 * sc, nodePoint.y), postPaint);
+    canvas.drawLine(Offset(rect.right - 24 * sc, rect.bottom), Offset(nodePoint.x + 5 * sc, nodePoint.y), postPaint);
+    canvas.drawRRect(outer, Paint()..color = const Color(0xFF3E2108));
+    for (var i = 1; i <= 4; i++) {
+      final y = rect.top + i * rect.height / 5;
+      canvas.drawLine(
+        Offset(rect.left + 8 * sc, y),
+        Offset(rect.right - 8 * sc, y + math.sin(i) * 2 * sc),
+        Paint()
+          ..color = Colors.orange.withValues(alpha: 0.08)
+          ..strokeWidth = sc,
+      );
+    }
+    canvas.drawRect(
+      Rect.fromLTWH(rect.left, rect.top, 4 * sc, rect.height),
+      Paint()..color = const Color(0xFFFF8F00),
     );
+    canvas.drawRRect(
+      outer,
+      Paint()
+        ..color = const Color(0xFF8D6E63)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * sc,
+    );
+    _drawFinoFace(canvas, Offset(rect.left + 17 * sc, rect.top + 17 * sc), sc);
     _drawText(
       canvas,
       node.label,
-      Offset(rect.left + 28 * sc, rect.top + 8 * sc),
+      Offset(rect.left + 34 * sc, rect.top + 9 * sc),
       rect.width - 38 * sc,
       const Color(0xFFFF8F00),
-      9 * sc,
+      14 * sc,
       FontWeight.w800,
+      dyslexiaMode: dyslexia,
     );
     _drawText(
       canvas,
       node.storyText,
-      Offset(rect.left + 12 * sc, rect.top + 28 * sc),
+      Offset(rect.left + 12 * sc, rect.top + 34 * sc),
       rect.width - 24 * sc,
       const Color(0xFFE8D5B0),
-      7.5 * sc,
+      11 * sc,
       FontWeight.w600,
       maxLines: 3,
+      dyslexiaMode: dyslexia,
     );
 
     _buttonRect = Rect.fromLTWH(
       rect.left + 18 * sc,
-      rect.bottom - 30 * sc,
+      rect.bottom - 40 * sc,
       rect.width - 36 * sc,
-      22 * sc,
+      32 * sc,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(_buttonRect, Radius.circular(7 * sc)),
@@ -96,12 +118,13 @@ class StoryPopupComponent extends PositionComponent
     _drawText(
       canvas,
       '▶  Quest starten',
-      Offset(_buttonRect.left, _buttonRect.top + 5 * sc),
+      Offset(_buttonRect.left, _buttonRect.top + 8 * sc),
       _buttonRect.width,
       const Color(0xFFE8F5E9),
-      8.4 * sc,
+      13 * sc,
       FontWeight.w800,
       align: TextAlign.center,
+      dyslexiaMode: dyslexia,
     );
   }
 
@@ -112,6 +135,26 @@ class StoryPopupComponent extends PositionComponent
       onQuestStart();
     }
   }
+}
+
+void _drawFinoFace(Canvas canvas, Offset center, double sc) {
+  canvas.drawCircle(center, 10 * sc, Paint()..color = const Color(0xFFEF6C00));
+  for (final sign in const [-1.0, 1.0]) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx + sign * 6 * sc, center.dy - 7 * sc)
+        ..lineTo(center.dx + sign * 11 * sc, center.dy - 16 * sc)
+        ..lineTo(center.dx + sign * 2 * sc, center.dy - 11 * sc)
+        ..close(),
+      Paint()..color = const Color(0xFFEF6C00),
+    );
+  }
+  canvas.drawOval(
+    Rect.fromCenter(center: center.translate(0, 2 * sc), width: 12 * sc, height: 10 * sc),
+    Paint()..color = const Color(0xFFFFFDE7),
+  );
+  canvas.drawCircle(center.translate(-3 * sc, -2 * sc), 1.4 * sc, Paint()..color = const Color(0xFF1A1A1A));
+  canvas.drawCircle(center.translate(3 * sc, -2 * sc), 1.4 * sc, Paint()..color = const Color(0xFF1A1A1A));
 }
 
 class OvaMapBubbleComponent extends PositionComponent
@@ -143,6 +186,7 @@ class OvaMapBubbleComponent extends PositionComponent
   void render(Canvas canvas) {
     final screen = Size(game.size.x, game.size.y);
     final sc = WorldMapBackground.uniformScale(game.size);
+    final dyslexia = game.accessibility.dyslexiaMode;
     final fade = _elapsed <= 2.1
         ? 1.0
         : (1 - ((_elapsed - 2.1) / 0.4)).clamp(0.0, 1.0);
@@ -158,7 +202,10 @@ class OvaMapBubbleComponent extends PositionComponent
       28 * sc,
       Paint()..color = Color.fromRGBO(130, 220, 90, 0.18 * fade),
     );
-    _drawOva(canvas, center.dx, center.dy, sc * 0.78, fade);
+    final ovaY = game.accessibility.calmMode
+        ? center.dy
+        : center.dy + math.sin(_elapsed * 12) * 2 * sc;
+    _drawOva(canvas, center.dx, ovaY, sc, fade);
 
     final rect = Rect.fromLTWH(
       (center.dx - 102 * sc).clamp(8 * sc, screen.width - 204 * sc),
@@ -167,53 +214,58 @@ class OvaMapBubbleComponent extends PositionComponent
       64 * sc,
     );
     final bubble = RRect.fromRectAndRadius(rect, Radius.circular(7 * sc));
-    canvas.drawRRect(
-      bubble,
-      Paint()..color = Color.fromRGBO(20, 10, 0, 0.92 * fade),
+    canvas.drawRRect(bubble, Paint()..color = const Color(0xFF3E2108).withValues(alpha: fade));
+    for (var i = 1; i <= 4; i++) {
+      final y = rect.top + i * rect.height / 5;
+      canvas.drawLine(
+        Offset(rect.left + 8 * sc, y),
+        Offset(rect.right - 8 * sc, y + math.sin(i) * sc),
+        Paint()
+          ..color = Colors.orange.withValues(alpha: 0.08 * fade)
+          ..strokeWidth = sc,
+      );
+    }
+    canvas.drawRect(
+      Rect.fromLTWH(rect.left, rect.top, 4 * sc, rect.height),
+      Paint()..color = const Color(0xFFFF8F00).withValues(alpha: fade),
     );
     canvas.drawRRect(
       bubble,
       Paint()
-        ..color = const Color(0xFFFF8F00).withValues(alpha: fade)
+        ..color = const Color(0xFF8D6E63).withValues(alpha: fade)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2 * sc,
-    );
-    final pointer = Path()
-      ..moveTo(center.dx - 8 * sc, rect.bottom)
-      ..lineTo(center.dx + 8 * sc, rect.bottom)
-      ..lineTo(center.dx, center.dy - 8 * sc)
-      ..close();
-    canvas.drawPath(
-      pointer,
-      Paint()..color = Color.fromRGBO(20, 10, 0, 0.92 * fade),
+        ..strokeWidth = 1.5 * sc,
     );
 
     _drawText(
       canvas,
-      'Gut gemacht, ${completedNode.label}!',
+      'Gut gemacht!',
       Offset(rect.left + 10 * sc, rect.top + 8 * sc),
       rect.width - 20 * sc,
       const Color(0xFFFF8F00).withValues(alpha: fade),
       7.5 * sc,
       FontWeight.w800,
+      dyslexiaMode: dyslexia,
     );
     _drawText(
       canvas,
-      'Die ${nextNode.label} öffnet sich!',
+      '${nextNode.label} öffnet sich!',
       Offset(rect.left + 10 * sc, rect.top + 27 * sc),
       rect.width - 20 * sc,
       const Color(0xFFE8D5B0).withValues(alpha: fade),
       7 * sc,
       FontWeight.w600,
+      dyslexiaMode: dyslexia,
     );
     _drawText(
       canvas,
-      'Lauf dorthin!',
+      'Fino kann weiterziehen.',
       Offset(rect.left + 10 * sc, rect.top + 43 * sc),
       rect.width - 20 * sc,
       const Color(0xFFE8D5B0).withValues(alpha: fade),
       7 * sc,
       FontWeight.w600,
+      dyslexiaMode: dyslexia,
     );
   }
 
@@ -280,6 +332,7 @@ void _drawText(
   FontWeight weight, {
   TextAlign align = TextAlign.start,
   int maxLines = 1,
+  bool dyslexiaMode = false,
 }) {
   final painter = TextPainter(
     text: TextSpan(
@@ -289,6 +342,8 @@ void _drawText(
         fontSize: fontSize,
         fontWeight: weight,
         height: 1.08,
+        fontFamily: dyslexiaMode ? 'OpenDyslexic' : null,
+        letterSpacing: dyslexiaMode ? fontSize * 0.08 : null,
       ),
     ),
     textAlign: align,

@@ -4,6 +4,10 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/audio_service.dart';
+import '../../services/accessibility_service.dart';
+import '../../services/fino_evolution_service.dart';
+import '../../services/season_service.dart';
 import 'world_map_background.dart';
 import 'world_map_fino.dart';
 import 'world_map_node_component.dart';
@@ -12,6 +16,7 @@ import 'world_quest_node.dart';
 
 class LernFuchsWorldGame extends FlameGame {
   final ValueChanged<WorldQuestNode> onQuestNodeTapped;
+  final AudioService? audioService;
   Map<String, dynamic> _worldState = {};
   final List<WorldMapNodeComponent> _nodeComponents = [];
   WorldMapFinoComponent? _fino;
@@ -22,8 +27,12 @@ class LernFuchsWorldGame extends FlameGame {
   double _finoAnimT = 0.0;
   int _finoEdgeIndex = -1;
   VoidCallback? _onFinoArrived;
+  SeasonContext? _season;
+  FinoStyle _finoStyle = FinoStyle.forStage(0);
+  AccessibilitySettings _accessibility = AccessibilitySettings.off;
+  double _lastHopSoundT = -1.0;
 
-  LernFuchsWorldGame({required this.onQuestNodeTapped});
+  LernFuchsWorldGame({required this.onQuestNodeTapped, this.audioService});
 
   bool get finoIsWalking => _finoEdgeIndex >= 0;
 
@@ -42,7 +51,7 @@ class LernFuchsWorldGame extends FlameGame {
     WorldQuestNode(
       id: 'lichtung',
       mapPosition: WorldMapBackground.nodePositions[1],
-      state: QuestNodeState.completed,
+      state: QuestNodeState.lockedFar,
       type: QuestNodeType.clearing,
       label: 'Lichtung',
       questId: 'main_zahlenpfad',
@@ -54,7 +63,7 @@ class LernFuchsWorldGame extends FlameGame {
     WorldQuestNode(
       id: 'alter_baum',
       mapPosition: WorldMapBackground.nodePositions[2],
-      state: QuestNodeState.available,
+      state: QuestNodeState.lockedFar,
       type: QuestNodeType.tree,
       label: 'Alter Baum',
       questId: 'main_buchstabenhain',
@@ -66,7 +75,7 @@ class LernFuchsWorldGame extends FlameGame {
     WorldQuestNode(
       id: 'bruecke',
       mapPosition: WorldMapBackground.nodePositions[3],
-      state: QuestNodeState.available,
+      state: QuestNodeState.lockedFar,
       type: QuestNodeType.bridge,
       label: 'Brücke',
       questId: 'side_silbenquelle',
@@ -78,7 +87,7 @@ class LernFuchsWorldGame extends FlameGame {
     WorldQuestNode(
       id: 'waldsee',
       mapPosition: WorldMapBackground.nodePositions[4],
-      state: QuestNodeState.locked,
+      state: QuestNodeState.lockedFar,
       type: QuestNodeType.lake,
       label: 'Waldsee',
       questId: 'side_musterlichtung',
@@ -112,15 +121,22 @@ class LernFuchsWorldGame extends FlameGame {
     onQuestNodeTapped(node);
   }
 
-  void updateUnlockedOrder(int highestUnlockedOrder) {
+  void updateUnlockedOrder(
+    int highestUnlockedOrder, {
+    bool revealNextOnly = false,
+  }) {
     _activeQuestNodes = questNodes
         .map(
           (node) => node.copyWith(
             state: node.order < highestUnlockedOrder
                 ? QuestNodeState.completed
                 : node.order == highestUnlockedOrder
-                ? QuestNodeState.current
-                : QuestNodeState.locked,
+                ? revealNextOnly
+                      ? QuestNodeState.nextAvailable
+                      : QuestNodeState.current
+                : node.order == highestUnlockedOrder + 1
+                ? QuestNodeState.lockedNear
+                : QuestNodeState.lockedFar,
           ),
         )
         .toList();
@@ -133,7 +149,10 @@ class LernFuchsWorldGame extends FlameGame {
       _nodeComponents[i].updateQuestNode(_activeQuestNodes[i]);
     }
     if (!finoIsWalking && _fino != null) {
-      final clampedOrder = highestUnlockedOrder.clamp(0, questNodes.length - 1);
+      final clampedOrder =
+          (revealNextOnly ? highestUnlockedOrder - 1 : highestUnlockedOrder)
+              .clamp(0, questNodes.length - 1)
+              .toInt();
       _fino!.moveToMapPoint(
         WorldMapBackground.nodePositionToVector(
           Size(size.x, size.y),
@@ -145,6 +164,24 @@ class LernFuchsWorldGame extends FlameGame {
 
   WorldQuestNode nodeForOrder(int order) {
     return _activeQuestNodes.firstWhere((node) => node.order == order);
+  }
+
+  QuestNodeState stateForOrder(int order) => nodeForOrder(order).state;
+
+  SeasonContext? get season => _season;
+  FinoStyle get finoStyle => _finoStyle;
+  AccessibilitySettings get accessibility => _accessibility;
+
+  void updateSeason(SeasonContext? season) {
+    _season = season;
+  }
+
+  void updateFinoStyle(FinoStyle style) {
+    _finoStyle = style;
+  }
+
+  void updateAccessibility(AccessibilitySettings settings) {
+    _accessibility = settings;
   }
 
   void showStoryPopup(WorldQuestNode node, VoidCallback onQuestStart) {
@@ -195,13 +232,20 @@ class LernFuchsWorldGame extends FlameGame {
     if (_finoEdgeIndex < 0) return;
 
     _finoAnimT = (_finoAnimT + dt / 1.8).clamp(0.0, 1.0);
+    if (_lastHopSoundT < 0 || _finoAnimT - _lastHopSoundT >= 0.4 / 1.8) {
+      audioService?.playSfx('fino_hop');
+      _lastHopSoundT = _finoAnimT;
+    }
+    final eased = Curves.easeInOut.transform(_finoAnimT);
     final screen = Size(size.x, size.y);
     _fino?.moveToMapPoint(
-      WorldMapBackground.edgePointToVector(screen, _finoEdgeIndex, _finoAnimT),
+      WorldMapBackground.edgePointToVector(screen, _finoEdgeIndex, eased),
+      hopOffset: math.sin(_finoAnimT * math.pi * 8) * 2 * WorldMapBackground.uniformScale(size),
     );
 
     if (_finoAnimT >= 1.0) {
       _finoEdgeIndex = -1;
+      _lastHopSoundT = -1.0;
       final callback = _onFinoArrived;
       _onFinoArrived = null;
       callback?.call();

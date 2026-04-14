@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 
-enum QuestNodeState { current, completed, available, locked }
+enum QuestNodeState {
+  current,
+  completed,
+  nextAvailable,
+  lockedNear,
+  lockedFar,
+  expedition,
+}
 
 enum QuestNodeType { start, clearing, tree, bridge, lake }
 

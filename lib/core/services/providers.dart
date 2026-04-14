@@ -2,6 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'storage_service.dart';
 import 'tts_service.dart';
 import 'sound_service.dart';
+import '../../services/audio_service.dart';
+import '../../services/accessibility_service.dart';
+import '../../services/dialogue_service.dart';
+import '../../services/fino_evolution_service.dart';
+import '../../services/school_mode_service.dart';
+import '../../services/season_service.dart';
 import '../learning/learning.dart';
 import '../models/settings.dart';
 import '../models/progress.dart';
@@ -39,6 +45,32 @@ final ttsServiceProvider = Provider<TtsService>((ref) {
 /// per `overrides` initialisiert.
 final soundServiceProvider = Provider<SoundService>((ref) {
   throw UnimplementedError('SoundService must be initialized in main()');
+});
+
+final dialogueServiceProvider = Provider<DialogueService>((ref) {
+  return DialogueService();
+});
+
+final audioServiceProvider = Provider<AudioService>((ref) {
+  final service = AudioService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final seasonServiceProvider = Provider<SeasonService>((ref) {
+  return SeasonService();
+});
+
+final finoEvolutionProvider = Provider<FinoEvolutionService>((ref) {
+  return FinoEvolutionService();
+});
+
+final accessibilityProvider = Provider<AccessibilityService>((ref) {
+  return AccessibilityService();
+});
+
+final schoolModeProvider = Provider<SchoolModeService>((ref) {
+  return SchoolModeService();
 });
 
 // ── App-Einstellungen ──────────────────────────────────────────────────────

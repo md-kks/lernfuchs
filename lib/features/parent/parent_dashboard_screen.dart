@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/progress.dart';
 import '../../core/services/providers.dart';
+import '../../data/school_topics.dart';
+import '../../services/streak_service.dart';
 import '../../shared/constants/app_colors.dart';
 
 /// PIN-geschützter Eltern-Dashboard-Screen.
@@ -29,6 +31,7 @@ class ParentDashboardScreen extends ConsumerStatefulWidget {
 
 class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   bool _authenticated = false;
+  final Set<String> _selectedSchoolCompetencies = <String>{};
 
   @override
   void initState() {
@@ -128,6 +131,25 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     }
   }
 
+  Future<void> _pickBirthdate() async {
+    final storage = ref.read(storageServiceProvider);
+    final existing = storage.getStringValue('child_birthdate');
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.tryParse(existing ?? '') ??
+          DateTime(now.year - 7, now.month, now.day),
+      firstDate: DateTime(now.year - 12),
+      lastDate: now,
+    );
+    if (picked == null) return;
+    await storage.setOnboardingValue(
+      'child_birthdate',
+      picked.toIso8601String().substring(0, 10),
+    );
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_authenticated) {
@@ -140,6 +162,20 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final profiles = ref.watch(allProfilesProvider);
     final settings = ref.watch(appSettingsProvider);
     final learning = ref.read(learningEngineProvider);
+    final audio = ref.watch(audioServiceProvider);
+    final storage = ref.watch(storageServiceProvider);
+    final accessibility = ref.watch(accessibilityProvider);
+    final schoolMode = ref.watch(schoolModeProvider);
+    final seasonalEnabled = storage.getBoolValue(
+      'seasonal_enabled',
+      defaultValue: true,
+    );
+    final birthdate = storage.getStringValue('child_birthdate');
+    final activeProfile = profiles.cast<ChildProfile?>().firstWhere(
+          (profile) => profile?.id == settings.activeProfileId,
+          orElse: () => profiles.isNotEmpty ? profiles.first : null,
+        );
+    final schoolGrade = activeProfile?.grade ?? 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -154,38 +190,303 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           ),
         ],
       ),
-      body: profiles.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('👶', style: TextStyle(fontSize: 64)),
-                  const SizedBox(height: 16),
-                  const Text('Noch keine Profile angelegt.'),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    icon: const Icon(Icons.person_add_rounded),
-                    label: const Text('Profil anlegen'),
-                    onPressed: () => context.push('/profiles'),
-                  ),
-                ],
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _ParentSettingsCard(
+            musicEnabled: audio.musicEnabled,
+            sfxEnabled: audio.sfxEnabled,
+            seasonalEnabled: seasonalEnabled,
+            birthdate: birthdate,
+            dyslexiaMode: accessibility.dyslexiaMode,
+            motorMode: accessibility.motorMode,
+            calmMode: accessibility.calmMode,
+            schoolModeActive: schoolMode.isActive,
+            schoolModeExpires: schoolMode.expiresLabel,
+            schoolGrade: schoolGrade,
+            activeSchoolCompetencies: schoolMode.activeCompetencies,
+            selectedSchoolCompetencies: _selectedSchoolCompetencies,
+            onMusicChanged: (value) {
+              audio.setMusicEnabled(value);
+              setState(() {});
+            },
+            onSfxChanged: (value) {
+              audio.setSfxEnabled(value);
+              setState(() {});
+            },
+            onSeasonalChanged: (value) async {
+              await storage.setOnboardingValue('seasonal_enabled', value);
+              if (mounted) setState(() {});
+            },
+            onBirthdateTap: _pickBirthdate,
+            onDyslexiaChanged: (value) async {
+              await accessibility.setDyslexiaMode(value);
+              if (mounted) setState(() {});
+            },
+            onMotorChanged: (value) async {
+              await accessibility.setMotorMode(value);
+              if (mounted) setState(() {});
+            },
+            onCalmChanged: (value) async {
+              await accessibility.setCalmMode(value);
+              if (mounted) setState(() {});
+            },
+            onSchoolTopicChanged: (competencyIds, selected) {
+              setState(() {
+                if (!selected) {
+                  _selectedSchoolCompetencies.removeAll(competencyIds);
+                } else if (_selectedSchoolCompetencies.length < 3) {
+                  _selectedSchoolCompetencies.addAll(competencyIds);
+                }
+              });
+            },
+            onActivateSchoolMode: () async {
+              if (_selectedSchoolCompetencies.isEmpty) return;
+              await schoolMode.activate(_selectedSchoolCompetencies.toList());
+              if (!mounted) return;
+              setState(() {});
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Schulmodus aktiv für 14 Tage')),
+              );
+            },
+            onDeactivateSchoolMode: () async {
+              await schoolMode.deactivate();
+              if (mounted) setState(() => _selectedSchoolCompetencies.clear());
+            },
+          ),
+          const SizedBox(height: 16),
+          if (profiles.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const Text('👶', style: TextStyle(fontSize: 64)),
+                    const SizedBox(height: 16),
+                    const Text('Noch keine Profile angelegt.'),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      icon: const Icon(Icons.person_add_rounded),
+                      label: const Text('Profil anlegen'),
+                      onPressed: () => context.push('/profiles'),
+                    ),
+                  ],
+                ),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: profiles.length,
-              itemBuilder: (_, i) {
-                final profile = profiles[i];
-                final allProgress = learning.allProgressForProfile(profile.id);
-                final isActive = profile.id == settings.activeProfileId;
-                return _ProfileCard(
-                  profile: profile,
-                  allProgress: allProgress,
-                  isActive: isActive,
-                  federalState: settings.federalState,
-                );
-              },
+          else
+            ...profiles.map((profile) {
+              final allProgress = learning.allProgressForProfile(profile.id);
+              final isActive = profile.id == settings.activeProfileId;
+              return _ProfileCard(
+                profile: profile,
+                allProgress: allProgress,
+                isActive: isActive,
+                federalState: settings.federalState,
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ParentSettingsCard extends StatelessWidget {
+  final bool musicEnabled;
+  final bool sfxEnabled;
+  final bool seasonalEnabled;
+  final String? birthdate;
+  final bool dyslexiaMode;
+  final bool motorMode;
+  final bool calmMode;
+  final bool schoolModeActive;
+  final String schoolModeExpires;
+  final int schoolGrade;
+  final List<String> activeSchoolCompetencies;
+  final Set<String> selectedSchoolCompetencies;
+  final ValueChanged<bool> onMusicChanged;
+  final ValueChanged<bool> onSfxChanged;
+  final ValueChanged<bool> onSeasonalChanged;
+  final VoidCallback onBirthdateTap;
+  final ValueChanged<bool> onDyslexiaChanged;
+  final ValueChanged<bool> onMotorChanged;
+  final ValueChanged<bool> onCalmChanged;
+  final void Function(List<String> competencyIds, bool selected)
+      onSchoolTopicChanged;
+  final VoidCallback onActivateSchoolMode;
+  final VoidCallback onDeactivateSchoolMode;
+
+  const _ParentSettingsCard({
+    required this.musicEnabled,
+    required this.sfxEnabled,
+    required this.seasonalEnabled,
+    required this.birthdate,
+    required this.dyslexiaMode,
+    required this.motorMode,
+    required this.calmMode,
+    required this.schoolModeActive,
+    required this.schoolModeExpires,
+    required this.schoolGrade,
+    required this.activeSchoolCompetencies,
+    required this.selectedSchoolCompetencies,
+    required this.onMusicChanged,
+    required this.onSfxChanged,
+    required this.onSeasonalChanged,
+    required this.onBirthdateTap,
+    required this.onDyslexiaChanged,
+    required this.onMotorChanged,
+    required this.onCalmChanged,
+    required this.onSchoolTopicChanged,
+    required this.onActivateSchoolMode,
+    required this.onDeactivateSchoolMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SettingsSectionTitle('Sound'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Musik'),
+              value: musicEnabled,
+              onChanged: onMusicChanged,
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Soundeffekte'),
+              value: sfxEnabled,
+              onChanged: onSfxChanged,
+            ),
+            const Divider(),
+            const _SettingsSectionTitle('Saisonales'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Saisonale Dekorationen'),
+              value: seasonalEnabled,
+              onChanged: onSeasonalChanged,
+            ),
+            const Divider(),
+            const _SettingsSectionTitle('Zugänglichkeit'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Legasthenie-Schrift'),
+              subtitle: const Text('OpenDyslexic Schrift für alle Texte'),
+              value: dyslexiaMode,
+              onChanged: onDyslexiaChanged,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Größere Tipp-Ziele'),
+              subtitle: const Text(
+                'Für Kinder mit motorischen Schwierigkeiten',
+              ),
+              value: motorMode,
+              onChanged: onMotorChanged,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Ruhiger Modus'),
+              subtitle: const Text('Weniger Animationen und Effekte'),
+              value: calmMode,
+              onChanged: onCalmChanged,
+            ),
+            const Divider(),
+            const _SettingsSectionTitle('Schulmodus'),
+            if (schoolModeActive) ...[
+              const Text('Aktive Themen:'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: activeSchoolCompetencies
+                    .map(
+                      (id) => Chip(
+                        avatar: const Icon(Icons.check, size: 16),
+                        label: Text(id),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 8),
+              Text('Aktiv bis $schoolModeExpires'),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onDeactivateSchoolMode,
+                  child: const Text('Beenden'),
+                ),
+              ),
+            ] else ...[
+              const Text('Was übt ihr gerade in der Schule?'),
+              const Text('LernFuchs passt sich für 2 Wochen an.'),
+              const SizedBox(height: 8),
+              ...?schoolTopicsByClass[schoolGrade]?.map((topic) {
+                final selected = topic.competencyIds.any(
+                  selectedSchoolCompetencies.contains,
+                );
+                final lockedOut =
+                    !selected && selectedSchoolCompetencies.length >= 3;
+                return CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(topic.label),
+                  subtitle: Text(topic.competencyIds.join(', ')),
+                  value: selected,
+                  onChanged: lockedOut
+                      ? null
+                      : (value) => onSchoolTopicChanged(
+                            topic.competencyIds,
+                            value ?? false,
+                          ),
+                );
+              }),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: selectedSchoolCompetencies.isEmpty
+                      ? null
+                      : onActivateSchoolMode,
+                  child: const Text('Aktivieren'),
+                ),
+              ),
+            ],
+            const Divider(),
+            const _SettingsSectionTitle('Sonstiges'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Geburtstag (optional)'),
+              subtitle: Text(
+                birthdate == null || birthdate!.isEmpty
+                    ? 'Für Geburtstagsüberraschungen in der App'
+                    : '$birthdate · Für Geburtstagsüberraschungen in der App',
+              ),
+              trailing: const Icon(Icons.calendar_month_rounded),
+              onTap: onBirthdateTap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SettingsSectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.primary,
+          ),
     );
   }
 }
@@ -341,6 +642,35 @@ class _ProfileCardState extends State<_ProfileCard> {
                       'Noch keine Übungen absolviert.',
                       style: TextStyle(color: Colors.grey),
                     ),
+                  const SizedBox(height: 16),
+                  _SubjectHeader(
+                    label: 'Baumhaus',
+                    icon: Icons.park_rounded,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<List<String>>(
+                    future: StreakService().earnedBaumhausItems,
+                    builder: (context, snapshot) {
+                      final items = snapshot.data ?? const [];
+                      if (items.isEmpty) {
+                        return const Text(
+                          'Noch keine Baumhaus-Items verdient.',
+                          style: TextStyle(color: Colors.grey),
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: items
+                            .map(
+                              (item) => Text(
+                                '• ${baumhausItems[item] ?? item}',
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

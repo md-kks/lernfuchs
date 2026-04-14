@@ -18,6 +18,27 @@ LernFuchs is fully offline — there is no backend, no network calls, and no thi
 | `lf_quest_status_<profileId>` | `String` (JSON) | `QuestStatusStore` | `Map<questId, QuestStatus>` object |
 | `lf_inventory_<profileId>` | `String` (JSON) | `InventoryStore` | `InventoryState` object |
 | `lf_daily_path_<profileId>-<yyyy-mm-dd>` | `String` (JSON) | `DailyPathStore` | `DailyPathProgress` object |
+| `placement_completed` | `bool` | Placement | First-launch placement finished |
+| `placement_elo_results` | `String` (JSON map) | Placement | Initial competency values |
+| `parent_pin` | `String` | Parent onboarding | Parent PIN mirror for onboarding flow |
+| `child_birthdate` | `String` | Onboarding / Parent dashboard | Optional `YYYY-MM-DD` birthday |
+| `daily_task_last_played` | `String` | `StreakService` | Last completed daily task date |
+| `daily_streak_count` | `int` | `StreakService` | Current daily streak |
+| `daily_streak_last_day` | `String` | `StreakService` | Last date counted for streak |
+| `baumhaus_items` | `List<String>` | `StreakService` / Expedition | Cosmetic Baumhaus rewards |
+| `baumhaus_stage` | `int` | World completion | Baumhaus visual stage |
+| `fino_evolution_stage` | `int` | `FinoEvolutionService` | Fino visual evolution stage |
+| `music_enabled` | `bool` | `AudioService` | Music enabled |
+| `sfx_enabled` | `bool` | `AudioService` | Sound effects enabled |
+| `seasonal_enabled` | `bool` | `SeasonService` | Seasonal decorations enabled |
+| `dyslexia_mode` | `bool` | `AccessibilityService` | OpenDyslexic text mode |
+| `motor_mode` | `bool` | `AccessibilityService` | Larger tap targets |
+| `calm_mode` | `bool` | `AccessibilityService` | Reduced animation mode |
+| `school_mode_competencies` | `List<String>` | `SchoolModeService` | Active school mode competencies |
+| `school_mode_expires` | `String` | `SchoolModeService` | ISO expiry timestamp |
+| `game_fully_completed` | `bool` | Finale flow | Full campaign completion |
+| `world_<n>_completed_at` | `String` | World completion | ISO timestamp for completed world |
+| `child_elo_<competencyId>` | `double` | Placement | Placement-starting value per competency |
 
 ---
 
