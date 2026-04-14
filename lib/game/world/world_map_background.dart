@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -163,7 +164,9 @@ class WorldMapBackground extends Component with HasGameRef<LernFuchsWorldGame> {
       ..strokeCap = StrokeCap.round;
     for (var distance = 0.0; distance < metric.length; distance += 14 * _scale(screenSize)) {
       final tangent = metric.getTangentForOffset(distance);
-      if (tangent != null) canvas.drawPoints(PointMode.points, [tangent.position], paint);
+      if (tangent != null) {
+        canvas.drawPoints(ui.PointMode.points, [tangent.position], paint);
+      }
     }
   }
 
