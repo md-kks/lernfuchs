@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'storage_service.dart';
+import 'tflite_service.dart';
 import 'tts_service.dart';
 import 'sound_service.dart';
 import '../../services/audio_service.dart';
@@ -28,6 +29,10 @@ final learningEngineProvider = Provider<LearningEngine>((ref) {
 
 final dailyPathServiceProvider = Provider<DailyPathService>((ref) {
   return DailyPathService(learningEngine: ref.watch(learningEngineProvider));
+});
+
+final tfliteServiceProvider = Provider<TFLiteService>((ref) {
+  return TFLiteService();
 });
 
 /// Gibt die initialisierte [TtsService]-Instanz bereit.

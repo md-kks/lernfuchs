@@ -1,5 +1,5 @@
 import '../engine/curriculum.dart';
-import '../engine/difficulty.dart';
+import '../engine/elo_difficulty_engine.dart';
 import '../engine/evaluator.dart';
 import '../engine/task_generator.dart';
 import '../models/progress.dart';
@@ -30,14 +30,21 @@ class DefaultLearningEngine implements LearningEngine {
 
   @override
   LearningSession createSession(LearningRequest request) {
-    final tasks = TaskGenerator.generateSession(
-      subject: request.subject,
-      grade: request.grade,
-      topic: request.topic,
-      difficulty: request.difficulty,
-      count: request.count,
-      seed: request.seed,
-    );
+    final tasks = request.isInterleaved
+        ? TaskGenerator.generateInterleavedSession(
+            topics: request.interleavedTopics!,
+            difficulty: request.difficulty,
+            count: request.count,
+            seed: request.seed,
+          )
+        : TaskGenerator.generateSession(
+            subject: request.subject,
+            grade: request.grade,
+            topic: request.topic,
+            difficulty: request.difficulty,
+            count: request.count,
+            seed: request.seed,
+          );
     return LearningSession(request: request, tasks: tasks);
   }
 
@@ -55,15 +62,16 @@ class DefaultLearningEngine implements LearningEngine {
     required List<int> recentResults,
     required int currentDifficulty,
   }) {
-    return DifficultyEngine.nextDifficulty(
-      recentResults: recentResults,
-      currentDifficulty: currentDifficulty,
-    );
+    // Falls wir in einer laufenden Session sind, nutzen wir das Elo-Rating
+    // des Themas aus dem Storage (da es bei jeder Antwort aktualisiert wird).
+    // Hier vereinfacht: Wir geben die aktuelle Empfehlung basierend auf dem
+    // historischen Progress zurück.
+    return currentDifficulty; // In-Session-Anpassung erfolgt via recordResult
   }
 
   @override
   int initialDifficulty({required TopicProgress progress, required int grade}) {
-    return DifficultyEngine.initialDifficulty(progress.accuracy, grade);
+    return EloDifficultyEngine.recommendDifficulty(progress.eloRating);
   }
 
   @override
@@ -93,6 +101,7 @@ class DefaultLearningEngine implements LearningEngine {
     required int grade,
     required String topic,
     required bool correct,
+    int? difficulty,
   }) {
     return _storage.recordResult(
       profileId: profileId,
@@ -100,6 +109,7 @@ class DefaultLearningEngine implements LearningEngine {
       grade: grade,
       topic: topic,
       correct: correct,
+      difficulty: difficulty,
     );
   }
 }

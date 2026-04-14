@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/learning/learning.dart';
@@ -61,6 +62,11 @@ class _LearningChallengeSessionState
   late int _difficulty;
   final List<int> _results = [];
 
+  // Scaffolding & Growth Mindset
+  Timer? _scaffoldTimer;
+  bool _showHint = false;
+  int _errorCount = 0;
+
   Subject get _subject => widget.request.subject;
 
   @override
@@ -68,13 +74,34 @@ class _LearningChallengeSessionState
     super.initState();
     _difficulty = widget.request.difficulty;
     _loadTasks();
+    _startScaffoldTimer();
     Future.delayed(const Duration(milliseconds: 400), _speakCurrentQuestion);
   }
 
   @override
   void dispose() {
+    _scaffoldTimer?.cancel();
     ref.read(ttsServiceProvider).stop();
     super.dispose();
+  }
+
+  void _startScaffoldTimer() {
+    _scaffoldTimer?.cancel();
+    _showHint = false;
+    // Nach 8 Sekunden Inaktivität zeigen wir einen Hinweis (Fade-in Scaffolding)
+    _scaffoldTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && !_showFeedback) {
+        setState(() => _showHint = true);
+        _speakHint();
+      }
+    });
+  }
+
+  void _speakHint() {
+    // Ova gibt einen motivierenden Hinweis
+    ref.read(ttsServiceProvider).speak(
+      'Brauchst du Hilfe? Schau dir die Aufgabe nochmal genau an, du schaffst das!',
+    );
   }
 
   void _loadTasks() {
@@ -110,13 +137,19 @@ class _LearningChallengeSessionState
 
   void _submitAnswer() {
     if (_pendingAnswer == null) return;
+    _scaffoldTimer?.cancel();
     final learning = ref.read(learningEngineProvider);
     final result = learning.evaluateTask(_currentTask, _pendingAnswer);
     final correct = result.correct;
     setState(() {
       _lastResult = correct;
       _showFeedback = true;
-      if (correct) _correctCount++;
+      if (correct) {
+        _correctCount++;
+        _errorCount = 0;
+      } else {
+        _errorCount++;
+      }
       _results.add(correct ? 1 : 0);
     });
 
@@ -128,6 +161,7 @@ class _LearningChallengeSessionState
         grade: widget.request.grade,
         topic: widget.request.topic,
         correct: correct,
+        difficulty: _difficulty,
       );
     }
 
@@ -138,6 +172,18 @@ class _LearningChallengeSessionState
           .then((_) {})
           .catchError((_) {});
     } else {
+      // Growth Mindset Feedback via VUI statt nur Fehler-Sound
+      final tts = ref.read(ttsServiceProvider);
+      if (_errorCount >= 2) {
+        tts.speak(
+          'Das war ein guter Versuch! Lass uns das Problem gemeinsam untersuchen und eine neue Strategie ausprobieren.',
+        );
+      } else {
+        tts.speak(
+          'Nicht schlimm! Probier es einfach nochmal, Fehler helfen uns beim Lernen.',
+        );
+      }
+
       ref
           .read(soundServiceProvider)
           .playWrong()
@@ -145,10 +191,23 @@ class _LearningChallengeSessionState
           .catchError((_) {});
     }
 
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-      _nextTask();
-    });
+    if (correct) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        _nextTask();
+      });
+    } else {
+      // Bei Fehlern geben wir dem Kind Zeit zum Nachdenken
+      Future.delayed(const Duration(milliseconds: 2500), () {
+        if (!mounted) return;
+        setState(() {
+          _showFeedback = false;
+          _pendingAnswer = null;
+          _lastResult = null;
+        });
+        _startScaffoldTimer();
+      });
+    }
   }
 
   void _nextTask() {
@@ -165,18 +224,18 @@ class _LearningChallengeSessionState
       );
       return;
     }
-    _difficulty = ref
-        .read(learningEngineProvider)
-        .nextDifficulty(
-          recentResults: _results,
-          currentDifficulty: _difficulty,
-        );
+    _difficulty = ref.read(learningEngineProvider).nextDifficulty(
+      recentResults: _results,
+      currentDifficulty: _difficulty,
+    );
     setState(() {
       _currentIndex++;
       _pendingAnswer = null;
       _lastResult = null;
       _showFeedback = false;
+      _errorCount = 0;
     });
+    _startScaffoldTimer();
     Future.delayed(const Duration(milliseconds: 300), _speakCurrentQuestion);
   }
 
@@ -203,17 +262,27 @@ class _LearningChallengeSessionState
       );
     }
 
-    final content = _SessionContent(
-      grade: widget.request.grade,
-      task: _currentTask,
-      currentIndex: _currentIndex,
-      totalCount: widget.request.count,
-      lastResult: _lastResult,
-      showFeedback: _showFeedback,
-      pendingAnswer: _pendingAnswer,
-      onAnswerChanged: _onAnswerChanged,
-      onSubmitAnswer: _submitAnswer,
-      embedded: !widget.showScaffold,
+    final content = Stack(
+      children: [
+        _SessionContent(
+          grade: widget.request.grade,
+          task: _currentTask,
+          currentIndex: _currentIndex,
+          totalCount: widget.request.count,
+          lastResult: _lastResult,
+          showFeedback: _showFeedback,
+          pendingAnswer: _pendingAnswer,
+          onAnswerChanged: _onAnswerChanged,
+          onSubmitAnswer: _submitAnswer,
+          embedded: !widget.showScaffold,
+        ),
+        if (_showHint && !_showFeedback)
+          Positioned(
+            top: 80,
+            right: 20,
+            child: _ScaffoldHintBubble(),
+          ),
+      ],
     );
 
     if (!widget.showScaffold) return content;
@@ -402,5 +471,29 @@ class LearningAnswerWidget extends StatelessWidget {
       ),
       _ => FreeInputWidget(task: task, onChanged: onChanged),
     };
+  }
+}
+
+class _ScaffoldHintBubble extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('🦉', style: TextStyle(fontSize: 24)),
+          SizedBox(width: 8),
+          Text('Tipp von Ova!', style: TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 }

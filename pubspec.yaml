@@ -13,6 +13,9 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.6.1
 
+  # Machine Learning (Handschrifterkennung)
+  tflite_flutter: ^0.10.4
+
   # Navigation
   go_router: ^14.8.1
 

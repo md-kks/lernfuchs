@@ -1,3 +1,5 @@
+import '../engine/elo_difficulty_engine.dart';
+
 /// Lernfortschritt eines Kindes für ein einzelnes Thema.
 ///
 /// Wird dauerhaft in [StorageService] (SharedPreferences) gespeichert.
@@ -26,6 +28,9 @@ class TopicProgress {
   /// Anzahl der korrekt beantworteten Aufgaben.
   int correctAttempts;
 
+  /// Aktuelles Elo-Rating für dieses Thema.
+  double eloRating;
+
   /// Zeitstempel der letzten Übungssession.
   DateTime lastPracticed;
 
@@ -40,6 +45,7 @@ class TopicProgress {
     required this.topic,
     this.totalAttempts = 0,
     this.correctAttempts = 0,
+    this.eloRating = 1000.0,
     required this.lastPracticed,
     List<int>? recentResults,
   }) : recentResults = recentResults ?? [];
@@ -55,11 +61,20 @@ class TopicProgress {
 
   /// Registriert ein neues Ergebnis und aktualisiert alle Felder.
   /// Hält [recentResults] auf maximal 20 Einträge.
-  void recordResult(bool correct) {
+  void recordResult(bool correct, {int? difficulty}) {
     totalAttempts++;
     if (correct) correctAttempts++;
     recentResults.add(correct ? 1 : 0);
     if (recentResults.length > 20) recentResults.removeAt(0);
+
+    if (difficulty != null) {
+      eloRating = EloDifficultyEngine.calculateNewRating(
+        currentRating: eloRating,
+        taskDifficulty: difficulty,
+        success: correct,
+      );
+    }
+
     lastPracticed = DateTime.now();
   }
 
@@ -70,6 +85,7 @@ class TopicProgress {
         'topic': topic,
         'totalAttempts': totalAttempts,
         'correctAttempts': correctAttempts,
+        'eloRating': eloRating,
         'lastPracticed': lastPracticed.toIso8601String(),
         'recentResults': recentResults,
       };
@@ -81,6 +97,7 @@ class TopicProgress {
         topic: json['topic'] as String,
         totalAttempts: json['totalAttempts'] as int? ?? 0,
         correctAttempts: json['correctAttempts'] as int? ?? 0,
+        eloRating: (json['eloRating'] as num? ?? 1000.0).toDouble(),
         lastPracticed: DateTime.parse(json['lastPracticed'] as String),
         recentResults: (json['recentResults'] as List?)?.cast<int>() ?? [],
       );

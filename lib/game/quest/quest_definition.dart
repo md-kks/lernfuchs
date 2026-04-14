@@ -99,6 +99,10 @@ class LearningChallengeDefinition {
   final String successText;
   final String retryText;
 
+  /// Optional: Wenn gesetzt, werden Aufgaben aus diesen Themen gemischt.
+  /// Format: "subjectId:topic" (z.B. "math:addition_bis_10")
+  final List<String>? interleavedTopics;
+
   const LearningChallengeDefinition({
     required this.subject,
     required this.grade,
@@ -107,6 +111,7 @@ class LearningChallengeDefinition {
     this.count = 1,
     this.successText = '',
     this.retryText = '',
+    this.interleavedTopics,
   });
 
   factory LearningChallengeDefinition.fromJson(Map<String, dynamic> json) {
@@ -118,6 +123,7 @@ class LearningChallengeDefinition {
       count: json['count'] as int? ?? 1,
       successText: json['successText'] as String? ?? '',
       retryText: json['retryText'] as String? ?? '',
+      interleavedTopics: (json['interleavedTopics'] as List?)?.cast<String>(),
     );
   }
 }

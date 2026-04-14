@@ -138,6 +138,7 @@ class StorageService {
     required int grade,
     required String topic,
     required bool correct,
+    int? difficulty,
   }) async {
     final progress = getProgress(
       profileId: profileId,
@@ -145,7 +146,7 @@ class StorageService {
       grade: grade,
       topic: topic,
     );
-    progress.recordResult(correct);
+    progress.recordResult(correct, difficulty: difficulty);
     await saveProgress(progress);
   }
 

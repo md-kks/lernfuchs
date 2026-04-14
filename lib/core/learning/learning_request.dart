@@ -8,6 +8,9 @@ class LearningRequest {
   final int count;
   final int? seed;
 
+  /// Optional: Wenn gesetzt, werden Aufgaben aus verschiedenen Themen gemischt.
+  final List<({Subject subject, int grade, String topic})>? interleavedTopics;
+
   const LearningRequest({
     required this.subject,
     required this.grade,
@@ -15,7 +18,10 @@ class LearningRequest {
     required this.difficulty,
     this.count = 10,
     this.seed,
+    this.interleavedTopics,
   });
+
+  bool get isInterleaved => interleavedTopics != null && interleavedTopics!.isNotEmpty;
 
   String get subjectId => subject.id;
 }

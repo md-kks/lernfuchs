@@ -79,12 +79,22 @@ class QuestRuntime {
       throw StateError('Current quest step is not a learning challenge.');
     }
 
+    List<({Subject subject, int grade, String topic})>? interleaved;
+    if (challenge.interleavedTopics != null) {
+      interleaved = challenge.interleavedTopics!.map((t) {
+        final parts = t.split(':');
+        final subject = Subject.values.firstWhere((s) => s.id == parts[0]);
+        return (subject: subject, grade: challenge.grade, topic: parts[1]);
+      }).toList();
+    }
+
     return LearningRequest(
       subject: challenge.subject,
       grade: challenge.grade,
       topic: challenge.topic,
       difficulty: challenge.difficulty,
       count: challenge.count,
+      interleavedTopics: interleaved,
     );
   }
 
@@ -93,6 +103,7 @@ class QuestRuntime {
     required TaskModel task,
     required dynamic answer,
   }) async {
+    final challenge = currentStep(questId)?.learningChallenge;
     final result = learningEngine.evaluateTask(task, answer);
     await learningEngine.recordResult(
       profileId: profileId,
@@ -102,6 +113,7 @@ class QuestRuntime {
       grade: task.grade,
       topic: task.topic,
       correct: result.correct,
+      difficulty: challenge?.difficulty,
     );
     if (result.correct) {
       await completeCurrentStep(questId);

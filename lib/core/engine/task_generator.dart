@@ -148,6 +148,28 @@ class TaskGenerator {
     return List.generate(count, (_) => template.generate(difficulty, rng));
   }
 
+  /// Generiert eine verschachtelte Session (Interleaved Practice) aus verschiedenen Themen.
+  ///
+  /// Jede Aufgabe wird zufällig aus den verfügbaren [topics] ausgewählt.
+  static List<TaskModel> generateInterleavedSession({
+    required List<({Subject subject, int grade, String topic})> topics,
+    required int difficulty,
+    int count = 10,
+    int? seed,
+  }) {
+    _init();
+    if (topics.isEmpty) return [];
+    final rng = seed != null ? Random(seed) : Random();
+
+    return List.generate(count, (_) {
+      final t = topics[rng.nextInt(topics.length)];
+      final key = '${t.subject.id}_${t.grade}_${t.topic}';
+      final template = _templates[key];
+      if (template == null) return null;
+      return template.generate(difficulty, rng);
+    }).whereType<TaskModel>().toList();
+  }
+
   /// Gibt alle registrierten Templates für ein bestimmtes Fach und eine Klasse zurück.
   ///
   /// Genutzt von [SubjectOverviewScreen] um die Themenauswahl aufzubauen.

@@ -1,20 +1,15 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/task_model.dart';
+import '../../../core/services/providers.dart';
 
 /// Handschrift-Widget für [TaskType.handwriting] — Buchstaben nachspuren.
 ///
-/// Zeigt den Ziel-Buchstaben groß und stark verblasst im Hintergrund.
-/// Das Kind zeichnet mit dem Finger darüber. Sobald genug Fläche gedeckt ist
-/// ([_coverageThreshold]), wird `'traced'` via [onChanged] gemeldet und
-/// ein visueller Erfolg-Zustand angezeigt.
-///
-/// ### Technische Details
-/// - Zeichen-Layer: [CustomPainter] mit `List<List<Offset>>`-Strichlisten
-/// - Coverage-Messung: Raster von 12×12 Testpunkten über die Zeichenfläche;
-///   ein Punkt gilt als gedeckt wenn ein Strich ≤ [_coverageRadius]px entfernt ist
-/// - Referenz: großer `Text`-Widget mit sehr niedriger Opacity als Stack-Hintergrund
-class HandwritingWidget extends StatefulWidget {
+/// Nutzt den [TFLiteService] zur Erkennung der gezeichneten Buchstaben.
+/// Falls der Service nicht bereit ist, erfolgt ein Fallback auf die
+/// Coverage-Messung (Flächenabdeckung).
+class HandwritingWidget extends ConsumerStatefulWidget {
   final TaskModel task;
   final ValueChanged<dynamic> onChanged;
 
@@ -25,10 +20,10 @@ class HandwritingWidget extends StatefulWidget {
   });
 
   @override
-  State<HandwritingWidget> createState() => _HandwritingWidgetState();
+  ConsumerState<HandwritingWidget> createState() => _HandwritingWidgetState();
 }
 
-class _HandwritingWidgetState extends State<HandwritingWidget> {
+class _HandwritingWidgetState extends ConsumerState<HandwritingWidget> {
   /// Alle abgeschlossenen Striche (je ein List<Offset>)
   final List<List<Offset>> _strokes = [];
 
@@ -85,11 +80,30 @@ class _HandwritingWidgetState extends State<HandwritingWidget> {
     });
   }
 
-  void _onPanEnd(DragEndDetails details, Size size) {
+  void _onPanEnd(DragEndDetails details, Size size) async {
+    final stroke = List<Offset>.from(_currentStroke);
     setState(() {
-      _strokes.add(List.from(_currentStroke));
+      _strokes.add(stroke);
       _currentStroke = [];
     });
+
+    final tflite = ref.read(tfliteServiceProvider);
+    if (tflite.isReady) {
+      // Normalisierung der Koordinaten für das Modell
+      final normalizedPoints = _strokes
+          .expand((s) => s)
+          .map((p) => [p.dx / size.width, p.dy / size.height])
+          .toList();
+
+      final result = await tflite.recognize(normalizedPoints);
+      if (result != null && result.toLowerCase() == _letter.toLowerCase()) {
+        setState(() => _traced = true);
+        widget.onChanged('traced');
+        return;
+      }
+    }
+
+    // Fallback: Coverage-Messung
     final coverage = _computeCoverage(size);
     if (!_traced && coverage >= _coverageThreshold) {
       setState(() => _traced = true);
