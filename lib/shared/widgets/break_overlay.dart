@@ -63,7 +63,7 @@ class _BreakOverlayState extends ConsumerState<BreakOverlay> {
                 const SizedBox(height: 16),
                 Text(
                   'Zeit für eine Augenpause!',
-                  style: AppTextStyles.headlineSmall,
+                  style: AppTextStyles.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
