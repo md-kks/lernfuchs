@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/engine/engagement_engine.dart';
 import '../../core/learning/learning.dart';
 import '../../core/models/subject.dart';
 import '../../core/models/task_model.dart';
+import '../../core/services/engagement_service.dart';
 import '../../core/services/providers.dart';
 import '../../shared/constants/app_colors.dart';
 import '../../shared/constants/app_text_styles.dart';
@@ -62,7 +64,7 @@ class _LearningChallengeSessionState
   late int _difficulty;
   final List<int> _results = [];
 
-  // Scaffolding & Growth Mindset
+  // EDDA & Scaffolding
   Timer? _scaffoldTimer;
   bool _showHint = false;
   int _errorCount = 0;
@@ -74,8 +76,13 @@ class _LearningChallengeSessionState
     super.initState();
     _difficulty = widget.request.difficulty;
     _loadTasks();
+    _startEngagement();
     _startScaffoldTimer();
     Future.delayed(const Duration(milliseconds: 400), _speakCurrentQuestion);
+  }
+
+  void _startEngagement() {
+    ref.read(engagementServiceProvider.notifier).startTask(_difficulty);
   }
 
   @override
@@ -88,20 +95,27 @@ class _LearningChallengeSessionState
   void _startScaffoldTimer() {
     _scaffoldTimer?.cancel();
     _showHint = false;
-    // Nach 8 Sekunden Inaktivität zeigen wir einen Hinweis (Fade-in Scaffolding)
+    // Fade-in Scaffolding orientiert sich am EDDA-Zustand
     _scaffoldTimer = Timer(const Duration(seconds: 8), () {
       if (mounted && !_showFeedback) {
-        setState(() => _showHint = true);
-        _speakHint();
+        final engagement = ref.read(engagementServiceProvider);
+        // Nur Tipps zeigen, wenn wir nicht mehr in der Sleep Phase sind
+        // oder das Engagement bereits sinkt.
+        if (!engagement.isInSleepPhase || engagement.interventionTriggered) {
+          setState(() => _showHint = true);
+          _speakHint();
+        }
       }
     });
   }
 
   void _speakHint() {
-    // Ova gibt einen motivierenden Hinweis
-    ref.read(ttsServiceProvider).speak(
-      'Brauchst du Hilfe? Schau dir die Aufgabe nochmal genau an, du schaffst das!',
-    );
+    final engagement = ref.read(engagementServiceProvider);
+    // Bei niedrigerem Engagement wird Ova proaktiver/hilfreicher
+    final text = engagement.score < 0.5
+        ? 'Lass uns das zusammen probieren. Schau mal, ich helfe dir!'
+        : 'Brauchst du Hilfe? Schau dir die Aufgabe nochmal genau an, du schaffst das!';
+    ref.read(ttsServiceProvider).speak(text);
   }
 
   void _loadTasks() {
@@ -132,6 +146,7 @@ class _LearningChallengeSessionState
   }
 
   void _onAnswerChanged(dynamic answer) {
+    ref.read(engagementServiceProvider.notifier).recordInteraction();
     setState(() => _pendingAnswer = answer);
   }
 
@@ -141,6 +156,11 @@ class _LearningChallengeSessionState
     final learning = ref.read(learningEngineProvider);
     final result = learning.evaluateTask(_currentTask, _pendingAnswer);
     final correct = result.correct;
+
+    if (!correct) {
+      ref.read(engagementServiceProvider.notifier).recordError();
+    }
+
     setState(() {
       _lastResult = correct;
       _showFeedback = true;
@@ -224,10 +244,20 @@ class _LearningChallengeSessionState
       );
       return;
     }
-    _difficulty = ref.read(learningEngineProvider).nextDifficulty(
-      recentResults: _results,
-      currentDifficulty: _difficulty,
-    );
+
+    // DDA Intervention (Concealment):
+    // Falls das Engagement-System eine Intervention anfordert, senken wir
+    // die Schwierigkeit unbemerkt ab, um Frustration abzufangen.
+    final engagement = ref.read(engagementServiceProvider);
+    if (engagement.interventionTriggered) {
+      _difficulty = (_difficulty - 1).clamp(1, 5);
+    } else {
+      _difficulty = ref.read(learningEngineProvider).nextDifficulty(
+            recentResults: _results,
+            currentDifficulty: _difficulty,
+          );
+    }
+
     setState(() {
       _currentIndex++;
       _pendingAnswer = null;
@@ -235,6 +265,7 @@ class _LearningChallengeSessionState
       _showFeedback = false;
       _errorCount = 0;
     });
+    _startEngagement();
     _startScaffoldTimer();
     Future.delayed(const Duration(milliseconds: 300), _speakCurrentQuestion);
   }
