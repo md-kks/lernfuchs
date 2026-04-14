@@ -226,6 +226,7 @@ class _FakeLearningEngine implements LearningEngine {
     required int grade,
     required String topic,
     required bool correct,
+    int? difficulty,
   }) async {
     recordedResults.add(correct);
   }

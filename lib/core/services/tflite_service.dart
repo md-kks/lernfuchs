@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
+// import 'package:tflite_flutter/tflite_flutter.dart';
 
 /// Service für On-Device Machine Learning via TFLite.
 ///
 /// Wird primär für die Handschrifterkennung im [HandwritingWidget] genutzt.
 class TFLiteService {
-  Interpreter? _interpreter;
+  // Interpreter? _interpreter;
   bool _isModelLoaded = false;
 
   static const String _modelPath = 'assets/ml/handwriting.tflite';
@@ -17,8 +17,8 @@ class TFLiteService {
   /// Lädt das TFLite-Modell aus den Assets.
   Future<void> loadModel() async {
     try {
-      _interpreter = await Interpreter.fromAsset(_modelPath);
-      _isModelLoaded = true;
+      // _interpreter = await Interpreter.fromAsset(_modelPath);
+      // _isModelLoaded = true;
     } catch (e) {
       // Falls das Modell fehlt (noch nicht vom Nutzer bereitgestellt),
       // loggen wir den Fehler, stürzen aber nicht ab.
@@ -32,7 +32,7 @@ class TFLiteService {
   /// Erwartet eine Liste von normalisierten Koordinaten (x, y).
   /// Gibt den erkannten Buchstaben/Zahl als String zurück.
   Future<String?> recognize(List<List<double>> input) async {
-    if (!_isModelLoaded || _interpreter == null) {
+    if (!_isModelLoaded /* || _interpreter == null */) {
       return null;
     }
 
@@ -49,6 +49,6 @@ class TFLiteService {
   }
 
   void dispose() {
-    _interpreter?.close();
+    // _interpreter?.close();
   }
 }

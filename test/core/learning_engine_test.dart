@@ -70,6 +70,7 @@ void main() {
         grade: 1,
         topic: 'addition_bis_10',
         correct: true,
+        difficulty: 2,
       );
 
       final progress = learning.progressFor(
