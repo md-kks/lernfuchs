@@ -144,10 +144,9 @@ Datei: `lib/features/home/home_screen.dart`.
 
 Der HomeScreen ist der verpflichtende Einstieg der App:
 
-- Tagesaufgaben-Einladung, solange die Tagesaufgabe nicht erledigt ist
-- `Baumhaus`-Button
-- Kartenbutton
-- `Mehr`-Menü mit optionalem Abenteuer-Intro und Einstufung
+- zentrale Hauptmenü-Fläche mit `Freies Lernen`, `Abenteuer`, `Tagesaufgabe` und `Baumhaus`
+- Abenteuer-Kachel bleibt bei deaktivierter Weltkarte sichtbar und markiert `Bald verfügbar`
+- `Mehr`-Menü mit Abenteuer-Intro, Einstufung und Elternbereich
 - Expeditionshinweis
 - Streak-Anzeige
 

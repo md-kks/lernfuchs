@@ -111,44 +111,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               SafeArea(
                 child: Stack(
                   children: [
-                    if (!_playedToday && config != null)
-                      Align(
-                        alignment: const Alignment(0, 0.40),
-                        child: _HomePanel(
-                          text: config.narrativeText,
-                          streak: _streak,
-                          onDaily: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const DailyTaskScreen(),
-                            ),
-                          ).then((_) => _load()),
+                    Align(
+                      alignment: const Alignment(0, 0.28),
+                      child: _MainMenuPanel(
+                        narrativeText: _gameCompleted && _playedToday
+                            ? 'Der Flüsterwald ist für immer in Sicherheit.'
+                            : _playedToday
+                            ? 'Heute erledigt. Du kannst frei weiterlernen.'
+                            : config?.narrativeText ??
+                                  'Was möchtest du heute machen?',
+                        streak: _streak,
+                        gameCompleted: _gameCompleted,
+                        gameWorldEnabled: FeatureFlags.enableGameWorld,
+                        onFreePractice: () =>
+                            context.push('/home/freies-ueben'),
+                        onAdventure: FeatureFlags.enableGameWorld
+                            ? () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const WorldMapScreen(),
+                                ),
+                              )
+                            : null,
+                        onDaily: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DailyTaskScreen(),
+                          ),
+                        ).then((_) => _load()),
+                        onBaumhaus: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BaumhausScreen(),
+                          ),
                         ),
                       ),
+                    ),
                     if (_playedToday)
                       const Align(
                         alignment: Alignment(0.7, -0.72),
                         child: _DoneBadge(),
-                      ),
-                    if (_gameCompleted && _playedToday)
-                      const Align(
-                        alignment: Alignment(0, 0.42),
-                        child: _CompletedCampaignPanel(),
-                      ),
-                    if (FeatureFlags.enableGameWorld)
-                      Align(
-                        alignment: const Alignment(0, 0.88),
-                        child: _HomeButton(
-                          text: _gameCompleted
-                              ? 'Erinnerungen →'
-                              : 'Flüsterwald erkunden →',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const WorldMapScreen(),
-                            ),
-                          ),
-                        ),
                       ),
                     if (_expeditionAvailable)
                       Positioned(
@@ -175,18 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         onIntro: () => context.push('/onboarding/child'),
                         onPlacement: () =>
                             context.push('/onboarding/placement'),
-                      ),
-                    ),
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: _BaumhausButton(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const BaumhausScreen(),
-                          ),
-                        ),
+                        onParent: () => context.push('/parent'),
                       ),
                     ),
                   ],
@@ -200,26 +191,180 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 }
 
-class _CompletedCampaignPanel extends StatelessWidget {
-  const _CompletedCampaignPanel();
+class _MainMenuPanel extends StatelessWidget {
+  final String narrativeText;
+  final int streak;
+  final bool gameCompleted;
+  final bool gameWorldEnabled;
+  final VoidCallback onFreePractice;
+  final VoidCallback? onAdventure;
+  final VoidCallback onDaily;
+  final VoidCallback onBaumhaus;
+
+  const _MainMenuPanel({
+    required this.narrativeText,
+    required this.streak,
+    required this.gameCompleted,
+    required this.gameWorldEnabled,
+    required this.onFreePractice,
+    required this.onAdventure,
+    required this.onDaily,
+    required this.onBaumhaus,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 18),
-      padding: const EdgeInsets.all(14),
+      width: math.min(MediaQuery.of(context).size.width - 32, 520),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xDD3E2108),
-        border: Border.all(color: const Color(0xFFFFD700), width: 1.2),
+        border: Border.all(color: const Color(0xFFFF8F00), width: 1.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Text(
-        'Der Flüsterwald ist für immer in Sicherheit.\nFino ist so stolz auf dich - und ich auch.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Color(0xFFE8D5B0),
-          fontWeight: FontWeight.w800,
-          fontSize: 15,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Hauptmenü',
+                  style: TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              if (streak >= 2)
+                Text(
+                  '$streak Tage',
+                  style: const TextStyle(
+                    color: Color(0xFFFF8F00),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            narrativeText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFE8D5B0),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: MediaQuery.of(context).size.width >= 520 ? 4 : 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.28,
+            children: [
+              _MainMenuTile(
+                title: 'Freies Lernen',
+                subtitle: 'Mathe und Deutsch',
+                icon: Icons.school_rounded,
+                onTap: onFreePractice,
+              ),
+              _MainMenuTile(
+                title: gameCompleted ? 'Erinnerungen' : 'Abenteuer',
+                subtitle: gameWorldEnabled
+                    ? 'Flüsterwald erkunden'
+                    : 'Bald verfügbar',
+                icon: Icons.map_rounded,
+                enabled: gameWorldEnabled,
+                onTap: onAdventure,
+              ),
+              _MainMenuTile(
+                title: 'Tagesaufgabe',
+                subtitle: 'Heute weiterkommen',
+                icon: Icons.today_rounded,
+                onTap: onDaily,
+              ),
+              _MainMenuTile(
+                title: 'Baumhaus',
+                subtitle: 'Belohnungen ansehen',
+                icon: Icons.cottage_rounded,
+                onTap: onBaumhaus,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MainMenuTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  const _MainMenuTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = enabled
+        ? const Color(0xFFE8D5B0)
+        : const Color(0x99E8D5B0);
+    final accent = enabled ? const Color(0xFFFF8F00) : const Color(0x66FF8F00);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: enabled ? const Color(0xFF2D1808) : const Color(0x992D1808),
+            border: Border.all(color: accent, width: 1.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: accent, size: 26),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: foreground,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -252,13 +397,18 @@ class _GoldenSparklePainter extends CustomPainter {
       oldDelegate.t != t;
 }
 
-enum _MoreHomeAction { intro, placement }
+enum _MoreHomeAction { intro, placement, parent }
 
 class _MoreHomeMenuButton extends StatelessWidget {
   final VoidCallback onIntro;
   final VoidCallback onPlacement;
+  final VoidCallback onParent;
 
-  const _MoreHomeMenuButton({required this.onIntro, required this.onPlacement});
+  const _MoreHomeMenuButton({
+    required this.onIntro,
+    required this.onPlacement,
+    required this.onParent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -274,6 +424,9 @@ class _MoreHomeMenuButton extends StatelessWidget {
           case _MoreHomeAction.placement:
             onPlacement();
             break;
+          case _MoreHomeAction.parent:
+            onParent();
+            break;
         }
       },
       itemBuilder: (context) => const [
@@ -288,6 +441,13 @@ class _MoreHomeMenuButton extends StatelessWidget {
           value: _MoreHomeAction.placement,
           child: Text(
             'Einstufung starten',
+            style: TextStyle(color: Color(0xFFE8D5B0)),
+          ),
+        ),
+        PopupMenuItem(
+          value: _MoreHomeAction.parent,
+          child: Text(
+            'Elternbereich',
             style: TextStyle(color: Color(0xFFE8D5B0)),
           ),
         ),
@@ -313,71 +473,6 @@ class _MoreHomeMenuButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _BaumhausButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _BaumhausButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xCC3E2108),
-            border: Border.all(color: const Color(0xFFFF8F00), width: 1.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CustomPaint(
-                size: const Size(24, 20),
-                painter: _HouseIconPainter(),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Baumhaus',
-                style: TextStyle(
-                  color: Color(0xFFE8D5B0),
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HouseIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFFFF8F00);
-    canvas.drawPath(
-      Path()
-        ..moveTo(size.width / 2, 1)
-        ..lineTo(size.width - 2, size.height * 0.45)
-        ..lineTo(size.width - 5, size.height * 0.45)
-        ..lineTo(size.width - 5, size.height - 2)
-        ..lineTo(5, size.height - 2)
-        ..lineTo(5, size.height * 0.45)
-        ..lineTo(2, size.height * 0.45)
-        ..close(),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _HouseIconPainter oldDelegate) => false;
 }
 
 class _HomeForestPainter extends CustomPainter {
@@ -455,58 +550,6 @@ class _HomeForestPainter extends CustomPainter {
       oldDelegate.t != t || oldDelegate.playedToday != playedToday;
 }
 
-class _HomePanel extends StatelessWidget {
-  final String text;
-  final int streak;
-  final VoidCallback onDaily;
-
-  const _HomePanel({
-    required this.text,
-    required this.streak,
-    required this.onDaily,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.84,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3E2108),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFF8F00)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (streak >= 2)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '🔥 $streak Tage',
-                style: const TextStyle(
-                  color: Color(0xFFFF8F00),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFE8D5B0),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _HomeButton(text: '▶  Tagesaufgabe', onTap: onDaily),
-        ],
-      ),
-    );
-  }
-}
-
 class _DoneBadge extends StatelessWidget {
   const _DoneBadge();
 
@@ -522,35 +565,6 @@ class _DoneBadge extends StatelessWidget {
       child: const Text(
         'Heute erledigt ✓',
         style: TextStyle(color: Color(0xFFE8F5E9), fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class _HomeButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-
-  const _HomeButton({required this.text, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF1B5E20),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFFE8F5E9),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
       ),
     );
   }
