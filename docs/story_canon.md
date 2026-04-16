@@ -2,6 +2,10 @@
 
 Dieser Kanon dient als verbindliche Richtlinie für alle narrativen Inhalte (Quests, Dialoge, Beschreibungen) in LernFuchs. Er stellt sicher, dass die Spielwelt konsistent, motivierend und pädagogisch wertvoll bleibt.
 
+Dieses Dokument ist narrativer Kanon, nicht Implementierungsstatus. Für
+spielbare Quest-Slices, angelegte Topics/Templates und Planungsstand gelten
+`docs/world1_vertical_slice.md` und `docs/lernfuchs_2_systems.md`.
+
 ---
 
 ## 1. Die globale Prämisse
@@ -44,7 +48,8 @@ Der **Nebelschatten** – eine mysteriöse Kraft des Vergessens und der Verwirru
 ## 4. Welt 1: Der Flüsterwald (Klasse 1)
 
 *   **Tonalität:** "Sanftes Erwachen".
-*   **Themen:** Grundlagen (Zahlen bis 10/20, Anlaute, Silben).
+*   **Themen:** Klasse-1-Grundlagen und Vertiefung: Kapitel 1 = frühe Grundlagen, Kapitel 2 = erste Vertiefung, Kapitel 3 = Transfer und Struktur.
+*   **Didaktischer Hinweis:** `zahlenmauern` ist im Flüsterwald ab Kapitel 2 als klasse-1-fähiges Vertiefungsthema akzeptiert, nicht nur als Klasse-2-Thema.
 *   **Atmosphäre:** Sicher, grün, einladend. Der Nebel ist hier nur ein leichter Schleier, der erste Zeichen verdeckt.
 *   **Narrativer Bogen:** Der Eingang zur Bibliothek wird freigelegt. Fino findet die ersten Kristalle und baut sein Baumhaus als erste Basis auf.
 

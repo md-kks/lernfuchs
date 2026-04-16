@@ -9,9 +9,8 @@ one mentor, and local profile rewards only.
 Der vollständige Happy Path ist implementiert und durch Integrationstests abgesichert:
 **Weltkarte -> Quest starten -> Lernchallenge -> RewardOverlay -> Rückkehr -> sichtbarer Fortschritt im Baumhaus.**
 
-- Chapter 1 arc 1: `chapter1_ovas_ruf`
 - Baumhaus hub: `/home/baumhaus`, liest Upgrades/Items direkt aus dem `InventoryStore`.
-- Flüsterwald map: geöffnet aus dem Dashboard, gesteuert durch `enableGameWorld`.
+- Flüsterwald map: geöffnet aus dem Dashboard über die klickbare Abenteuer-Kachel.
 - Kapitel-1-Arcs:
   - `chapter1_ovas_ruf`: Deutsch `buchstaben`, schaltet `baumhaus_laterne` frei.
   - `chapter1_zahlenpfad`: Mathe `zahlen_bis_10`, vergibt kleine Sternensamen.
@@ -64,9 +63,10 @@ Bundesland-Varianten nur dann enger wird, wenn das System sie wirklich abbildet.
 
 ## Kapitelplanung
 
-Die produktive Vertical Slice bildet derzeit vier Kapitel-1-Quests ab. Die
-folgende 3-Kapitel-Verteilung ist die fachliche Zielplanung fuer World 1 und
-trennt bewusst zwischen bereits angelegten Topics und Konzeptbausteinen.
+Die produktiven Quest-/Dialogdaten bilden derzeit Kapitel 1 und Kapitel 2 des
+Fluesterwalds ab. Die folgende 3-Kapitel-Verteilung ist der kanonische
+World-1-Rahmen und trennt bewusst zwischen aktuell spielbarer Slice,
+angelegten Topics/Templates und Konzeptbausteinen.
 
 ### Kapitel 1: Fruehe Grundlagen
 
@@ -84,6 +84,8 @@ trennt bewusst zwischen bereits angelegten Topics und Konzeptbausteinen.
   `zahlenmauern`, `reimwoerter`, `lueckenwoerter`, Lautsynthese,
   Sichtwortschatz und erste lauttreue Woerter.
 - Aktuell als Topics/Templates angelegt: `addition_bis_10`,
+  `subtraktion_bis_10`, `zahlenmauern`, `reimwoerter`, `lueckenwoerter`.
+- Aktuell in der Kapitel-2-Quest-Slice genutzt: `addition_bis_10`,
   `subtraktion_bis_10`, `zahlenmauern`, `reimwoerter`, `lueckenwoerter`.
 - Konzept-/Planungsstand: Lautsynthese, Sichtwortschatz/Blitzlesen und erste
   lauttreue Woerter brauchen noch belastbare Templates, Wortlisten und UI.

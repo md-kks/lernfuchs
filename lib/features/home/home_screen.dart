@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/feature_flags.dart';
 import '../../core/services/providers.dart';
 import '../../services/streak_service.dart';
 import '../baumhaus/baumhaus_screen.dart';
@@ -121,18 +120,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             : config?.narrativeText ??
                                   'Was möchtest du heute machen?',
                         streak: _streak,
-                        gameCompleted: _gameCompleted,
-                        gameWorldEnabled: FeatureFlags.enableGameWorld,
                         onFreePractice: () =>
                             context.push('/home/freies-ueben'),
-                        onAdventure: FeatureFlags.enableGameWorld
-                            ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const WorldMapScreen(),
-                                ),
-                              )
-                            : null,
+                        onAdventure: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WorldMapScreen(),
+                          ),
+                        ),
                         onDaily: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -194,18 +189,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 class _MainMenuPanel extends StatelessWidget {
   final String narrativeText;
   final int streak;
-  final bool gameCompleted;
-  final bool gameWorldEnabled;
   final VoidCallback onFreePractice;
-  final VoidCallback? onAdventure;
+  final VoidCallback onAdventure;
   final VoidCallback onDaily;
   final VoidCallback onBaumhaus;
 
   const _MainMenuPanel({
     required this.narrativeText,
     required this.streak,
-    required this.gameCompleted,
-    required this.gameWorldEnabled,
     required this.onFreePractice,
     required this.onAdventure,
     required this.onDaily,
@@ -275,12 +266,9 @@ class _MainMenuPanel extends StatelessWidget {
                 onTap: onFreePractice,
               ),
               _MainMenuTile(
-                title: gameCompleted ? 'Erinnerungen' : 'Abenteuer',
-                subtitle: gameWorldEnabled
-                    ? 'Flüsterwald erkunden'
-                    : 'Bald verfügbar',
+                title: 'Abenteuer',
+                subtitle: 'Flüsterwald erkunden',
                 icon: Icons.map_rounded,
-                enabled: gameWorldEnabled,
                 onTap: onAdventure,
               ),
               _MainMenuTile(
@@ -308,31 +296,27 @@ class _MainMenuTile extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback? onTap;
-  final bool enabled;
 
   const _MainMenuTile({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.onTap,
-    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final foreground = enabled
-        ? const Color(0xFFE8D5B0)
-        : const Color(0x99E8D5B0);
-    final accent = enabled ? const Color(0xFFFF8F00) : const Color(0x66FF8F00);
+    const foreground = Color(0xFFE8D5B0);
+    const accent = Color(0xFFFF8F00);
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: enabled ? onTap : null,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Ink(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: enabled ? const Color(0xFF2D1808) : const Color(0x992D1808),
+            color: const Color(0xFF2D1808),
             border: Border.all(color: accent, width: 1.1),
             borderRadius: BorderRadius.circular(8),
           ),

@@ -20,12 +20,17 @@ Quest-Belohnungsschritte werden zusätzlich in `QuestStatus.grantedRewardIds` ge
 
 ## Baumhaus Upgrades
 
-Das Baumhaus (gerendert durch den `BaumhausPainter`) reagiert direkt auf die in `unlockedUpgradeIds` gespeicherten IDs. Im aktuellen Vertical Slice sind folgende Upgrades integriert:
+Das Baumhaus (gerendert durch den `BaumhausPainter`) reagiert direkt auf die in
+`InventoryState.unlockedUpgradeIds` gespeicherten IDs. Im aktuellen
+Quest-Vertical-Slice werden folgende Upgrades vergeben und sichtbar gemacht:
 
 - `baumhaus_laterne`: Eine leuchtende Laterne am Baumhaus.
 - `baumhaus_bank`: Eine gemütliche Holzbank vor dem Baumhaus.
 - `baumhaus_kristall_blau`: Ein schwebender blauer Wissenskristall.
-- `baumhaus_goldener_schwanz`: Ein besonderer Effekt für Fino.
+
+Weitere visuell unterstützte Upgrade-IDs wie `baumhaus_goldener_schwanz` können
+aus anderen Fortschrittspfaden stammen; sie sind nicht der aktuelle
+Quest-Slice-Reward-Pfad.
 
 Zusätzlich wächst das Baumhaus in Stufen (`baumhaus_stage`), gesteuert durch den Weltkarten-Fortschritt.
 

@@ -1,5 +1,11 @@
 # Refactor Map
 
+> Historical migration note. This file is not canonical for the current
+> dashboard-first start flow, World-1 chapter scope, or implemented
+> feature-flag behavior. Use `docs/lernfuchs_2_systems.md`,
+> `docs/world1_vertical_slice.md`, `docs/app_shell_migration_notes.md`, and
+> `docs/feature_flags.md` for the current state.
+
 This map documents the current Flutter learning app shape and the intended
 staging areas for a later hybrid Flutter + Flame migration. It is preparatory
 only: existing routes, screens, storage, and learning behavior remain unchanged.
@@ -28,10 +34,10 @@ only: existing routes, screens, storage, and learning behavior remain unchanged.
 - `lib/features/worksheet/worksheet_screen.dart`: printable worksheet view using
   deterministic task generation.
 
-Routes are currently centralized in `lib/app/router.dart` with go_router. The
-initial route remains `/home`, with onboarding enforced by the existing
-`StorageService.instance.placementCompleted` redirect. The game world is
-only accessible via explicit action from the `HomeScreen` when enabled.
+Routes are centralized in `lib/app/router.dart` with go_router. The current
+canonical start route is `/home`; onboarding, parent PIN setup, and placement
+are optional/manual flows and do not gate app start. The game world remains an
+explicit clickable HomeScreen action for the current testable world-map flow.
 
 ## Current Data Flow
 
@@ -73,13 +79,14 @@ only accessible via explicit action from the `HomeScreen` when enabled.
 - `lib/game/data/`: future game-side static data and adapters that translate
   existing learning data into game content.
 - `lib/app/feature_flags.dart`: central switch point for staged rollout.
-  `FeatureFlags.enableGameWorld` is currently `false` and is not wired into
-  behavior yet.
+  `FeatureFlags.enableGameWorld` is currently historical/reserved and no longer
+  blocks the HomeScreen adventure entry.
 
 ## Migration Notes
 
-- Keep the existing Flutter screens as the source of truth until equivalent
-  Flame flows are introduced and tested behind `FeatureFlags.enableGameWorld`.
+- Keep the existing Flutter screens as the source of truth. If future
+  unfinished Flame flows need staged rollout, gate those unfinished targets
+  directly instead of disabling the current HomeScreen adventure entry.
 - Introduce adapters before moving logic: route existing `TaskGenerator`,
   `Evaluator`, `DifficultyEngine`, and progress persistence through stable
   interfaces in `core/learning`.

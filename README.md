@@ -46,7 +46,7 @@ lib/
 ├── game/
 │   ├── dialogue/           # DialogueDefinition, HintDefinition, DialogueOverlay
 │   ├── quest/              # QuestDefinition, QuestRuntime, QuestStatusStore
-│   ├── reward/             # InventoryState, InventoryStore, BaumbausUpgrade
+│   ├── reward/             # InventoryState, InventoryStore, BaumhausUpgrade
 │   └── world/              # LernFuchsWorldGame (Flame), WorldQuestNode
 └── shared/
     ├── constants/          # AppColors, AppTextStyles
@@ -61,6 +61,13 @@ assets/
 ```
 
 ## Dokumentation
+
+Kanonischer Einstieg für Agentenarbeit:
+`docs/lernfuchs_2_systems.md` beschreibt den aktuellen Startfluss und die
+App-Systeme, `docs/world1_vertical_slice.md` den implementierten und geplanten
+World-1-Rahmen, `docs/quest_runtime.md`/`docs/meta_progression.md` Quest- und
+Reward-Laufzeitverhalten. Historische oder generierte Planungsdokumente sind
+in der jeweiligen Datei als nicht-kanonisch markiert.
 
 | Dokument | Inhalt |
 |---|---|

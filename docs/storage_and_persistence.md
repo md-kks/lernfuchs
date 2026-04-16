@@ -18,14 +18,14 @@ LernFuchs is fully offline — there is no backend, no network calls, and no thi
 | `lf_quest_status_<profileId>` | `String` (JSON) | `QuestStatusStore` | `Map<questId, QuestStatus>` object |
 | `lf_inventory_<profileId>` | `String` (JSON) | `InventoryStore` | `InventoryState` object |
 | `lf_daily_path_<profileId>-<yyyy-mm-dd>` | `String` (JSON) | `DailyPathStore` | `DailyPathProgress` object |
-| `placement_completed` | `bool` | Placement | First-launch placement finished |
+| `placement_completed` | `bool` | Placement | Optional placement completed; does not gate app start |
 | `placement_elo_results` | `String` (JSON map) | Placement | Initial competency values |
-| `parent_pin` | `String` | Parent onboarding | Parent PIN mirror for onboarding flow |
+| `parent_pin` | `String` | Parent onboarding | Optional parent PIN mirror; does not gate app start |
 | `child_birthdate` | `String` | Onboarding / Parent dashboard | Optional `YYYY-MM-DD` birthday |
 | `daily_task_last_played` | `String` | `StreakService` | Last completed daily task date |
 | `daily_streak_count` | `int` | `StreakService` | Current daily streak |
 | `daily_streak_last_day` | `String` | `StreakService` | Last date counted for streak |
-| `baumhaus_items` | `List<String>` | `StreakService` / Expedition | Cosmetic Baumhaus rewards |
+| `baumhaus_items` | `List<String>` | `StreakService` / Expedition | Legacy/cosmetic Baumhaus rewards; quest upgrades use `InventoryStore` |
 | `baumhaus_stage` | `int` | World completion | Baumhaus visual stage |
 | `fino_evolution_stage` | `int` | `FinoEvolutionService` | Fino visual evolution stage |
 | `music_enabled` | `bool` | `AudioService` | Music enabled |
@@ -104,7 +104,7 @@ Stored under key `lf_settings`.
 | `highContrast` | `bool` | `false` | Accessibility high-contrast mode. |
 | `activeProfileId` | `String` | `"default"` | `id` of the currently selected `ChildProfile`. |
 | `parentPin` | `String?` | `null` | 4-digit PIN; `null` means the parent area is unprotected. |
-| `onboardingDone` | `bool` | `false` | `true` once onboarding flow has been completed. |
+| `onboardingDone` | `bool` | `false` | Legacy/optional onboarding completion flag; no longer controls app-start routing. |
 
 ---
 
@@ -266,7 +266,7 @@ All providers are defined in `lib/core/services/providers.dart`.
 | Method | Description |
 |--------|-------------|
 | `updateFederalState(String code)` | Sets the Bundesland/state code (e.g. `"BY"`, `"NW"`). |
-| `setOnboardingDone()` | Marks `onboardingDone = true`; called at the end of the onboarding flow. |
+| `setOnboardingDone()` | Marks `onboardingDone = true`; optional/legacy onboarding state, not required for app start. |
 | `toggleSound(bool value)` | Enables or disables feedback sound effects. |
 | `toggleTts(bool value)` | Enables or disables text-to-speech. |
 | `toggleHighContrast(bool value)` | Enables or disables accessibility high-contrast mode. |

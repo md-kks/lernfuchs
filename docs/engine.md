@@ -242,7 +242,10 @@ Templates, die `TaskType.interactive` oder `TaskType.tapRhythm` verwenden (z.B. 
 
 ## 4. Schwierigkeitssteuerung (Difficulty & Elo)
 
-Die Steuerung der Aufgabenschwierigkeit erfolgt über zwei Mechanismen: Die historische Einstufung (Elo) und die (derzeit inaktive) In-Session-Adaption.
+Die Steuerung der Aufgabenschwierigkeit im Standardpfad erfolgt über Elo:
+`DefaultLearningEngine.initialDifficulty` nutzt das gespeicherte Elo-Rating als
+Einstieg, `DefaultLearningEngine.nextDifficulty` liest nach gespeicherten
+Antworten den aktuellen Elo-Stand für die In-Session-Anpassung.
 
 ### Initialschwierigkeit (Einstieg)
 

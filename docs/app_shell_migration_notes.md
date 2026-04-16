@@ -11,12 +11,18 @@
 - `/home/baumhaus`: hub screen for meta-progression, integrated with `InventoryStore`.
 - `/home/tagespfad`: placeholder shell route.
 - `/home/elternbereich`: placeholder shell route.
+- `/onboarding/child`: optionales Abenteuer-Intro, manuell aus dem HomeScreen erreichbar.
+- `/onboarding/placement`: optionaler Einstufungstest, manuell aus dem HomeScreen erreichbar.
+- `/onboarding/parent`: optionale Eltern-PIN-Einrichtung, manuell erreichbar.
 - `/parent`: existing parent dashboard, unchanged.
 
 ## Navigation Notes
 
-- The app always lands on `/home` (HomeScreen) after splash/onboarding.
-- The world map is opened via an explicit user action from the Dashboard when `enableGameWorld` is active.
+- The app always lands on `/home` (HomeScreen). There is no global redirect
+  back to onboarding, parent PIN setup, or placement.
+- The world map is opened via an explicit user action from the Dashboard. The
+  HomeScreen adventure entry is clickable for the current testable world-map
+  flow and is not marked as coming soon.
 - Quests are started from the world map, launching `ForestQuestOverlay` and `QuestRewardOverlay` within the same route context.
 - Keep `/home/subject/...` deep links working until a dedicated migration plan
   moves exercise entry points into a game-world route.

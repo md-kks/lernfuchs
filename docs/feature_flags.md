@@ -10,19 +10,22 @@ Die Klasse `FeatureFlags` hat einen privaten Konstruktor (`const FeatureFlags._(
 
 | Flag | Typ | Default | Status | Beschreibung |
 |------|-----|---------|--------|-------------|
-| `FeatureFlags.enableGameWorld` | bool | false | Aktiv | Steuert die Sichtbarkeit und Zugänglichkeit des Weltkarten-Einstiegs im Dashboard. Die App startet unabhängig vom Flag immer im `HomeScreen` (Dashboard). |
+| `FeatureFlags.enableGameWorld` | bool | false | Reserviert | Historischer Rollout-Schalter für den Weltkartenpfad. Die aktuelle HomeScreen-Abenteuer-Kachel wird nicht mehr durch dieses Flag blockiert, sondern öffnet den bestehenden testbaren Abenteuer-/Weltkartenflow. Die App startet unabhängig vom Flag immer im `HomeScreen` (Dashboard). |
 
 ## Verwendung
 
-Das Flag `enableGameWorld` wird geprüft, um den Einstiegspunkt zur Weltkarte anzuzeigen:
+Das Flag `enableGameWorld` blockiert die HomeScreen-Abenteuer-Kachel aktuell
+nicht mehr. Die Kachel bleibt im Hauptmenü testbar und navigiert direkt in den
+bestehenden Weltkartenflow. Falls später wieder ein Rollout-Gate nötig ist,
+sollte es gezielt am noch unfertigen Ziel- oder Contentumfang geprüft werden,
+nicht als pauschale Hauptmenü-Deaktivierung.
 
 ```dart
-if (FeatureFlags.enableGameWorld) {
-  // Zeige Weltkarten-Button im Dashboard
-}
+Navigator.push(
+  context,
+  MaterialPageRoute(builder: (_) => const WorldMapScreen()),
+);
 ```
-
-Hinweis: Diese Integration ist noch nicht implementiert.
 
 ## Neues Flag hinzufügen
 

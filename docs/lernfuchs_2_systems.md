@@ -145,7 +145,7 @@ Datei: `lib/features/home/home_screen.dart`.
 Der HomeScreen ist der verpflichtende Einstieg der App:
 
 - zentrale Hauptmenü-Fläche mit `Freies Lernen`, `Abenteuer`, `Tagesaufgabe` und `Baumhaus`
-- Abenteuer-Kachel bleibt bei deaktivierter Weltkarte sichtbar und markiert `Bald verfügbar`
+- Abenteuer-Kachel öffnet den bestehenden testbaren Weltkarten-/Abenteuerflow
 - `Mehr`-Menü mit Abenteuer-Intro, Einstufung und Elternbereich
 - Expeditionshinweis
 - Streak-Anzeige
@@ -154,7 +154,7 @@ Wenn `game_fully_completed == true`, wird ein permanenter Abschlusszustand angez
 
 - Ova-Abschlussbotschaft
 - goldene Sparkle-Überlagerung
-- Kartenbutton-Text `Erinnerungen`
+- Home-Botschaft erinnert an den abgeschlossenen Flüsterwald-Zustand
 
 ## Onboarding und Placement
 
@@ -235,16 +235,20 @@ Das Baumhaus zeigt:
 
 - Baumhaus-Stufe `0..4`
 - aktuelle Fino-Evolution
-- verdiente Items aus `baumhaus_items`
+- Quest- und Upgrade-Belohnungen aus `InventoryStore` /
+  `InventoryState.unlockedUpgradeIds`
 
-Aktuelle Items:
+Aktuelle Quest-Upgrade-IDs:
 
 | Item-ID | Name |
 |---|---|
 | `baumhaus_bank` | Gemütliche Bank |
 | `baumhaus_laterne` | Leuchtende Laterne |
-| `baumhaus_goldener_schwanz` | Goldener Schwanz für Fino |
 | `baumhaus_kristall_blau` | Blauer Kristall |
+
+`baumhaus_items` bleibt als älterer Streak-/Expeditions-Key dokumentiert, ist
+aber nicht die maßgebliche Source of Truth für Quest-Rewards im aktuellen
+Baumhaus. Für Quest-/Reward-/Upgrade-Zustand gilt `InventoryStore`.
 
 ## Breathing Pause
 
@@ -341,7 +345,7 @@ Neue Keys, die nicht Teil der ursprünglichen AppSettings-JSON-Struktur sind:
 | `daily_task_last_played` | String | Tagesaufgabe erledigt am |
 | `daily_streak_count` | int | aktueller Streak |
 | `daily_streak_last_day` | String | letzter Streak-Tag |
-| `baumhaus_items` | List<String> | freigeschaltete Baumhaus-Items |
+| `baumhaus_items` | List<String> | ältere kosmetische Streak-/Expeditions-Items |
 | `baumhaus_stage` | int | Baumhaus-Ausbaustufe |
 | `fino_evolution_stage` | int | Fino-Entwicklungsstufe |
 | `music_enabled` | bool | Musik an/aus |
@@ -358,7 +362,6 @@ Neue Keys, die nicht Teil der ursprünglichen AppSettings-JSON-Struktur sind:
 
 ## Aktuelle Einschränkungen
 
-- Flutter/Dart-Tooling war in der aktuellen Shell nicht verfügbar; Format/Analyze konnten dort nicht ausgeführt werden.
 - OpenDyslexic-Fonts sind Platzhalter und sollten durch echte OpenDyslexic-Assets ersetzt werden.
 - Audio-Dateien sind stille Platzhalter.
 - Finale-Trigger für Welten 2 bis 4 wird erst praktisch erreicht, wenn diese Welten vollständig in den Content integriert sind.
