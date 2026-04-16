@@ -156,8 +156,8 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen> {
     final quest = runtime.quests.firstWhere((quest) => quest.id == questId);
     final step = runtime.currentStep(quest.id);
     if (step?.type == QuestStepType.dialogue) {
-      final status = await runtime.completeCurrentStep(quest.id);
-      _game.updateWorldState(status.worldState);
+      final completion = await runtime.completeCurrentStep(quest.id);
+      _game.updateWorldState(completion.status.worldState);
     }
     setState(() {
       _selectedQuestNode = questNode;

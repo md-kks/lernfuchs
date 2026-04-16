@@ -56,7 +56,7 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
   int _currentIndex = 0;
   int _correctCount = 0;
   int _tasksCompleted = 0;
-  final int _sessionTaskCount = 6;
+  int _sessionTaskCount = 6;
   dynamic _currentAnswer;
   int _syllableCount = 0;
   bool? _lastCorrect;
