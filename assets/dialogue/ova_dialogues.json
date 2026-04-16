@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "characters": [
+    {
+      "id": "ova",
+      "name": "Ova",
+      "portraitAsset": "",
+      "portraitFallback": "O"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "zahlenwald_intro",
+      "title": "Hallo im Zahlenwald",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Hallo, ich bin Ova. Ich begleite dich durch die ersten Aufgaben im Zahlenwald."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Die Lichtung ist noch verschlossen. Loese eine Aufgabe, dann oeffnet sich der Weg."
+        }
+      ]
+    },
+    {
+      "id": "world1_prolog",
+      "title": "Prolog: Ovas Ruf",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Willkommen im Fluesterwald. Die Wege sind leise geworden, aber wir koennen sie Schritt fuer Schritt wecken."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Loese die erste Lichtspur. Danach wartet dein Baumhaus auf den ersten Fund."
+        }
+      ]
+    },
+    {
+      "id": "world1_zahlenpfad",
+      "title": "Der Zahlenpfad",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Diese Steine gehoeren zu den Zahlen. Wenn du genau zaehlst, legt sich der Pfad von selbst."
+        }
+      ]
+    },
+    {
+      "id": "world1_buchstabenhain",
+      "title": "Der Buchstabenhain",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Im Hain verstecken sich Anfangslaute. Ein klar erkannter Buchstabe beruhigt die fluesternden Blaetter."
+        }
+      ]
+    },
+    {
+      "id": "world1_silbenquelle",
+      "title": "Nebenpfad: Silbenquelle",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Die Quelle springt im Takt. Sprich das Wort langsam, dann findest du die Silben."
+        }
+      ]
+    },
+    {
+      "id": "world1_musterlichtung",
+      "title": "Nebenpfad: Musterlichtung",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Die Lichter wiederholen sich. Schau nach dem kleinsten Muster, dann weisst du, was als naechstes kommt."
+        }
+      ]
+    }
+  ]
+}
