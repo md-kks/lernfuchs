@@ -90,10 +90,29 @@ Lehrpläne variieren zwischen Bundesländern. Eltern wählen beim Start ihr Bund
 
 | Kategorie | Aufgabentypen |
 |-----------|--------------|
-| **Mathe Kl. 1–2** | Zahlenschreiben (Handschrift), Punkte zählen, Addition/Subtraktion freie Eingabe, Zahlenmauern, Rechenketten, Größer/Kleiner/Gleich (Drag&Drop), Einmaleins-Blitz, Uhrzeit-Stellen (interaktive Uhr), Geld zählen (Münzen-Drag&Drop), Muster fortsetzen, Formen erkennen |
+| **Mathe Kl. 1–2** | Zahlenschreiben (Handschrift), Punkte zählen, Zehnerfeld/Zwanzigerfeld, strukturierte Mengenerfassung, Zahlzerlegung, Zahlenstrahl/Nachbarzahlen, Addition/Subtraktion freie Eingabe, Rechenstrategien, Zahlenmauern als frühe Vertiefung ab Kl.1 und weiter in Kl.2, Rechenketten, Größer/Kleiner/Gleich (Drag&Drop), einfache Rechengeschichten, kombinatorische Aufgaben, Raumorientierung/Lagebeziehungen, Einmaleins-Blitz, Uhrzeit-Stellen (interaktive Uhr), Geld zählen (Münzen-Drag&Drop), Muster fortsetzen, Formen erkennen |
 | **Mathe Kl. 3–4** | Schriftliche Verfahren (Schritt-für-Schritt mit Übertrag), Division mit Rest, Brüche visualisieren (Tortendiagramm-Touch), Dezimalzahlen am Zahlenstrahl (Slider), Umrechnen (Längen/Gewichte/Zeit), Diagramme lesen, Umfang/Fläche mit Gitterfeld, Sachaufgaben mit Rechenschrittbaukasten |
-| **Deutsch Kl. 1–2** | Buchstaben-Nachschreiben (Handschrift), Silben klatschen (Tap-Rhythmus), Anlaute erkennen (Audio+Bild), Wörter lesen + Bild zuordnen, Artikel zuordnen (Drag&Drop), Reimwörter verbinden, Einzahl/Mehrzahl, ABC sortieren, Lückenwörter |
+| **Deutsch Kl. 1–2** | Buchstaben-Nachschreiben (Handschrift), Silben klatschen (Tap-Rhythmus), Anlaute erkennen (Audio+Bild), Lautsynthese, Buchstabenverbindungen/Lautgruppen (`sch`, `ch`, `ie`, `ei`, `au`, `eu`), Sichtwortschatz/Blitzlesen, lauttreue Wörter schreiben mit silbischem Mitsprechen, Abschreiben + Fehlervergleich, Satzgrenzen/Satzschlusszeichen vorbereiten, kurze freie Schreibimpulse, Alphabet als Ordnungs- und Nachschlagehilfe, Wörter lesen + Bild zuordnen, Artikel zuordnen (Drag&Drop), Reimwörter verbinden, Einzahl/Mehrzahl, ABC sortieren, Lückenwörter |
 | **Deutsch Kl. 3–4** | Zeitformen-Tabelle ausfüllen, Wortarten sortieren (Drag&Drop in Spalten), Satzglieder umstellen (Drag&Drop), Vier Fälle bestimmen, das/dass-Übung, Wörtliche Rede Satzzeichen setzen, Fehlertext korrigieren, Kommasetzung, Diktat (Audio → Schreiben), Lesetext + Verständnisfragen |
+
+### 2.2.1 World 1 / Klasse 1 — fachliche Kapitelplanung
+
+Diese Verteilung beschreibt die Zielplanung für die Klasse-1-Welt. Sie ist
+curriculumnah, aber keine erfundene bundesweite Sonderregel. Bereits vorhandene
+Topics/Templates dürfen früher in der App sichtbar sein; neue Methoden werden
+erst als implementiert markiert, wenn Generator, UI und Wort-/Aufgabensets
+belastbar vorhanden sind.
+
+| Kapitel | Fokus | Themen und Methoden | Status |
+|---------|-------|---------------------|--------|
+| Kapitel 1 – frühe Grundlagen | Einstieg in Schrift, Laute, Mengen und kleine Zahlen | `buchstaben`, `anlaute`, `zahlen_bis_10`, `silben`, `zahlen_bis_20` | als Themenkatalog angelegt; die aktuelle Quest-Slice nutzt vier davon, `anlaute` ist noch nicht als eigener Questschritt ausgespielt |
+| Kapitel 2 – erste Vertiefung | erste Operationen, Zerlegungen, frühe Wortarbeit | `addition_bis_10`, `subtraktion_bis_10`, `zahlenmauern`, `reimwoerter`, `lueckenwoerter`, Lautsynthese, Sichtwortschatz/Blitzlesen, erste lauttreue Wörter | Rechen- und Deutsch-Basistopics teils angelegt; `zahlenmauern` ist als klasse-1-fähiges Vertiefungsthema vorgesehen; Lautsynthese/Blitzlesen/lauttreue Wörter bleiben Konzeptstand |
+| Kapitel 3 – Transfer und Struktur | Muster, Orientierung, Schreib- und Lesestruktur | `formen`, `zahlenreihen`, `muster`, `handschrift`, `buchstaben_salat`, Raumorientierung/Lagebeziehungen, Zahlenstrahl/Nachbarzahlen, Buchstabenverbindungen, Satzgrenzen/Satzschlusszeichen, kleine Schreibimpulse | vorhandene Topics werden genutzt; Raumorientierung, expliziter Zahlenstrahl, Buchstabenverbindungen, Satzgrenzen und freie Schreibimpulse brauchen noch eigene Templates/UI |
+
+`zahlenmauern` werden damit nicht als ganz früher Grundlagenstoff verstanden,
+sondern als Vertiefungsformat ab Kapitel 2: geeignet für Zahlzerlegung,
+Zahlbeziehungen und Umkehrdenken im kleinen Zahlenraum. In Klasse 2 können sie
+mit größerem Zahlenraum weitergeführt werden.
 
 ### 2.3 Monetarisierung
 
@@ -290,28 +309,30 @@ Eltern-Bereich (PIN):
 [ ] 2.04  Mathe Kl.1: Subtraktion bis 10
 [ ] 2.05  Mathe Kl.1: Größer/Kleiner/Gleich (Tap auf >, <, =)
 [ ] 2.06  Mathe Kl.1: Zahlenreihen fortsetzen
-[ ] 2.07  Mathe Kl.1: Formen erkennen (Bild → Name zuordnen)
-[ ] 2.08  Mathe Kl.1: Muster fortsetzen (Drag&Drop)
-[ ] 2.09  Mathe Kl.2: Addition/Subtraktion bis 100
-[ ] 2.10  Mathe Kl.2: Einmaleins-Trainer (Blitz-Modus + Tabelle)
-[ ] 2.11  Mathe Kl.2: Uhrzeit (Interaktives Uhren-Widget)
-[ ] 2.12  Mathe Kl.2: Geld zählen (Münz-Drag&Drop-Widget)
-[ ] 2.13  Mathe Kl.2: Zahlenmauern + Rechenketten
-[ ] 2.14  Mathe Kl.2: Textaufgaben (Lesen + Rechnung + Antwort)
-[ ] 2.15  Mathe Kl.3: Schriftliche Addition (Schritt-für-Schritt-Widget)
-[ ] 2.16  Mathe Kl.3: Schriftliche Subtraktion
-[ ] 2.17  Mathe Kl.3: Halbschriftliche Multiplikation
-[ ] 2.18  Mathe Kl.3: Division mit Rest
-[ ] 2.19  Mathe Kl.3: Größen umrechnen (Längen, Gewichte, Zeit)
-[ ] 2.20  Mathe Kl.3: Geometrie (Umfang, Fläche mit Gitter-Widget)
-[ ] 2.21  Mathe Kl.4: Schriftliche Multiplikation
-[ ] 2.22  Mathe Kl.4: Schriftliche Division
-[ ] 2.23  Mathe Kl.4: Brüche (Visuelles Tortendiagramm-Widget)
-[ ] 2.24  Mathe Kl.4: Dezimalzahlen (Zahlenstrahl-Slider)
-[ ] 2.25  Mathe Kl.4: Diagramme lesen (Balkendiagramm + Fragen)
-[ ] 2.26  Mathe Kl.4: Große Zahlen / Runden
-[ ] 2.27  Mathe Kl.4: Sachaufgaben Klasse 4 Niveau
-[ ] 2.28  Alle Mathe-Templates: Unit Tests + Edge-Case-Tests
+[ ] 2.07  Mathe Kl.1: Zahlzerlegung, Zehnerfeld/Zwanzigerfeld, Nachbarzahlen
+[ ] 2.08  Mathe Kl.1: Zahlenmauern als frühe Vertiefung nach den Grundrechen-Basics
+[ ] 2.09  Mathe Kl.1: Formen erkennen, Muster fortsetzen, Raumorientierung/Lagebeziehungen
+[ ] 2.10  Mathe Kl.1: Einfache Rechengeschichten und kombinatorische Aufgaben
+[ ] 2.11  Mathe Kl.2: Addition/Subtraktion bis 100
+[ ] 2.12  Mathe Kl.2: Einmaleins-Trainer (Blitz-Modus + Tabelle)
+[ ] 2.13  Mathe Kl.2: Uhrzeit (Interaktives Uhren-Widget)
+[ ] 2.14  Mathe Kl.2: Geld zählen (Münz-Drag&Drop-Widget)
+[ ] 2.15  Mathe Kl.2: Zahlenmauern weiterführen + Rechenketten
+[ ] 2.16  Mathe Kl.2: Textaufgaben (Lesen + Rechnung + Antwort)
+[ ] 2.17  Mathe Kl.3: Schriftliche Addition (Schritt-für-Schritt-Widget)
+[ ] 2.18  Mathe Kl.3: Schriftliche Subtraktion
+[ ] 2.19  Mathe Kl.3: Halbschriftliche Multiplikation
+[ ] 2.20  Mathe Kl.3: Division mit Rest
+[ ] 2.21  Mathe Kl.3: Größen umrechnen (Längen, Gewichte, Zeit)
+[ ] 2.22  Mathe Kl.3: Geometrie (Umfang, Fläche mit Gitter-Widget)
+[ ] 2.23  Mathe Kl.4: Schriftliche Multiplikation
+[ ] 2.24  Mathe Kl.4: Schriftliche Division
+[ ] 2.25  Mathe Kl.4: Brüche (Visuelles Tortendiagramm-Widget)
+[ ] 2.26  Mathe Kl.4: Dezimalzahlen (Zahlenstrahl-Slider)
+[ ] 2.27  Mathe Kl.4: Diagramme lesen (Balkendiagramm + Fragen)
+[ ] 2.28  Mathe Kl.4: Große Zahlen / Runden
+[ ] 2.29  Mathe Kl.4: Sachaufgaben Klasse 4 Niveau
+[ ] 2.30  Alle Mathe-Templates: Unit Tests + Edge-Case-Tests
 ```
 
 ### Phase 3: Deutsch-Aufgaben (Wochen 9–12)
@@ -320,31 +341,34 @@ Eltern-Bereich (PIN):
 [ ] 3.01  Deutsch Kl.1: Buchstaben nachschreiben (Handschrift-Pad)
 [ ] 3.02  Deutsch Kl.1: Anlaute erkennen (Audio-Bild-Zuordnung)
 [ ] 3.03  Deutsch Kl.1: Silben klatschen (Tap-Rhythmus-Widget)
-[ ] 3.04  Deutsch Kl.1: Wort lesen + Bild zuordnen
-[ ] 3.05  Deutsch Kl.1: Reimwörter verbinden (Drag&Drop Linien)
-[ ] 3.06  Deutsch Kl.1: Wörter vervollständigen (Lückenbuchstabe)
-[ ] 3.07  Deutsch Kl.1: Buchstaben-Salat (Buchstaben ordnen)
-[ ] 3.08  Deutsch Kl.2: Artikel zuordnen (der/die/das Drag&Drop)
-[ ] 3.09  Deutsch Kl.2: Wortarten sortieren (Nomen/Verb/Adjektiv Spalten)
-[ ] 3.10  Deutsch Kl.2: Einzahl/Mehrzahl
-[ ] 3.11  Deutsch Kl.2: ie/ei, doppelte Mitlaute (Lückenwörter)
-[ ] 3.12  Deutsch Kl.2: ABC sortieren (Drag&Drop Reihenfolge)
-[ ] 3.13  Deutsch Kl.2: Sätze bilden (Wörter in richtige Reihenfolge)
-[ ] 3.14  Deutsch Kl.2: Lesetext + Verständnisfragen
-[ ] 3.15  Deutsch Kl.3: Zeitformen (Tabelle ausfüllen)
-[ ] 3.16  Deutsch Kl.3: Wortfamilien finden
-[ ] 3.17  Deutsch Kl.3: Zusammengesetzte Nomen (Drag&Drop verbinden)
-[ ] 3.18  Deutsch Kl.3: Satzarten erkennen + Satzzeichen setzen
-[ ] 3.19  Deutsch Kl.3: Diktat (TTS vorlesen → Kind schreibt)
-[ ] 3.20  Deutsch Kl.3: Lernwörter (Lesen, abdecken, schreiben, prüfen)
-[ ] 3.21  Deutsch Kl.4: Vier Fälle bestimmen
-[ ] 3.22  Deutsch Kl.4: Subjekt/Prädikat/Objekt (Drag&Drop Markierung)
-[ ] 3.23  Deutsch Kl.4: das/dass-Übung
-[ ] 3.24  Deutsch Kl.4: Wörtliche Rede — Satzzeichen setzen
-[ ] 3.25  Deutsch Kl.4: Fehlertext korrigieren (Tap auf Fehler)
-[ ] 3.26  Deutsch Kl.4: Kommasetzung
-[ ] 3.27  Deutsch Kl.4: Bericht vs. Erzählung erkennen
-[ ] 3.28  Alle Deutsch-Templates: Unit Tests
+[ ] 3.04  Deutsch Kl.1: Lautsynthese und Buchstabenverbindungen/Lautgruppen
+[ ] 3.05  Deutsch Kl.1: Sichtwortschatz/Blitzlesen und Wort-Bild-Zuordnung
+[ ] 3.06  Deutsch Kl.1: Reimwörter verbinden (Drag&Drop Linien)
+[ ] 3.07  Deutsch Kl.1: Lauttreue Wörter schreiben, Wörter vervollständigen, silbisch mitsprechen
+[ ] 3.08  Deutsch Kl.1: Abschreiben + Fehlervergleich, kurze freie Schreibimpulse
+[ ] 3.09  Deutsch Kl.1: Satzgrenzen/Satzschlusszeichen vorbereiten, Alphabet als Ordnungshilfe
+[ ] 3.10  Deutsch Kl.1: Buchstaben-Salat (Buchstaben ordnen)
+[ ] 3.11  Deutsch Kl.2: Artikel zuordnen (der/die/das Drag&Drop)
+[ ] 3.12  Deutsch Kl.2: Wortarten sortieren (Nomen/Verb/Adjektiv Spalten)
+[ ] 3.13  Deutsch Kl.2: Einzahl/Mehrzahl
+[ ] 3.14  Deutsch Kl.2: ie/ei, doppelte Mitlaute (Lückenwörter)
+[ ] 3.15  Deutsch Kl.2: ABC sortieren (Drag&Drop Reihenfolge)
+[ ] 3.16  Deutsch Kl.2: Sätze bilden (Wörter in richtige Reihenfolge)
+[ ] 3.17  Deutsch Kl.2: Lesetext + Verständnisfragen
+[ ] 3.18  Deutsch Kl.3: Zeitformen (Tabelle ausfüllen)
+[ ] 3.19  Deutsch Kl.3: Wortfamilien finden
+[ ] 3.20  Deutsch Kl.3: Zusammengesetzte Nomen (Drag&Drop verbinden)
+[ ] 3.21  Deutsch Kl.3: Satzarten erkennen + Satzzeichen setzen
+[ ] 3.22  Deutsch Kl.3: Diktat (TTS vorlesen → Kind schreibt)
+[ ] 3.23  Deutsch Kl.3: Lernwörter (Lesen, abdecken, schreiben, prüfen)
+[ ] 3.24  Deutsch Kl.4: Vier Fälle bestimmen
+[ ] 3.25  Deutsch Kl.4: Subjekt/Prädikat/Objekt (Drag&Drop Markierung)
+[ ] 3.26  Deutsch Kl.4: das/dass-Übung
+[ ] 3.27  Deutsch Kl.4: Wörtliche Rede — Satzzeichen setzen
+[ ] 3.28  Deutsch Kl.4: Fehlertext korrigieren (Tap auf Fehler)
+[ ] 3.29  Deutsch Kl.4: Kommasetzung
+[ ] 3.30  Deutsch Kl.4: Bericht vs. Erzählung erkennen
+[ ] 3.31  Alle Deutsch-Templates: Unit Tests
 ```
 
 ### Phase 4: Spezial-Features (Wochen 13–16)

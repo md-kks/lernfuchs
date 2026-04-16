@@ -108,5 +108,5 @@ contain either a list of quests or an object with a `quests` list.
 - Use `QuestStatus.worldState` to alter Flame node visuals after completion.
 - Add mini-series and daily-path orchestration on top of
   `LearningChallengeSession` once those flows have concrete product behavior.
-- World 1 currently uses five `WorldQuestNode.questId` links for the
+- World 1 Kapitel 1 currently uses four `WorldQuestNode.questId` links for the
   Flüsterwald vertical slice.

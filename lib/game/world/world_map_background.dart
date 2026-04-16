@@ -17,9 +17,22 @@ class WorldMapBackground extends Component with HasGameRef<LernFuchsWorldGame> {
     Offset(92 / 400, 262 / 660),
     Offset(295 / 400, 308 / 660),
     Offset(210 / 400, 115 / 660),
+    Offset(96 / 400, 96 / 660),
+    Offset(304 / 400, 88 / 660),
+    Offset(204 / 400, 42 / 660),
   ];
 
-  static const edges = [(0, 1), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)];
+  static const edges = [
+    (0, 1),
+    (1, 2),
+    (1, 3),
+    (2, 3),
+    (2, 4),
+    (3, 4),
+    (4, 5),
+    (5, 6),
+    (6, 7),
+  ];
 
   static const controlPoints = [
     Offset(158 / 400, 500 / 660),
@@ -28,9 +41,12 @@ class WorldMapBackground extends Component with HasGameRef<LernFuchsWorldGame> {
     Offset(190 / 400, 290 / 660),
     Offset(165 / 400, 258 / 660),
     Offset(256 / 400, 215 / 660),
+    Offset(146 / 400, 112 / 660),
+    Offset(198 / 400, 64 / 660),
+    Offset(264 / 400, 56 / 660),
   ];
 
-  static const sequentialEdges = [0, 1, 3, 5];
+  static const sequentialEdges = [0, 1, 3, 5, 6, 7, 8];
 
   WorldMapBackground() : super(priority: 0);
 

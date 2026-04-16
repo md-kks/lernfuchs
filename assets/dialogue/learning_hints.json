@@ -85,6 +85,86 @@
           "text": "Lies die Folge von vorne und pruefe, welches Zeichen als naechstes passt."
         }
       ]
+    },
+    {
+      "id": "zahlen_bis_20_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Zaehle die Punkte langsam und halte nach zehn kurz inne."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Wenn es mehr als zehn sind, zaehle von zehn aus weiter."
+        }
+      ]
+    },
+    {
+      "id": "subtraktion_bis_10_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Starte bei der groesseren Zahl und nimm Schritt fuer Schritt weg."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Zaehle rueckwaerts oder stelle dir die Punkte vor, die verschwinden."
+        }
+      ]
+    },
+    {
+      "id": "zahlenmauern_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "In einer Zahlenmauer gehoeren immer zwei Steine unten zu einem Stein darueber."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Addiere die beiden unteren Nachbarn oder pruefe, welcher Stein noch fehlt."
+        }
+      ]
+    },
+    {
+      "id": "reimwoerter_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Sprich beide Woerter langsam und hoere auf das Ende."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Reimwoerter klingen am Schluss gleich oder sehr aehnlich."
+        }
+      ]
+    },
+    {
+      "id": "lueckenwoerter_ova",
+      "mentorCharacterId": "ova",
+      "levels": [
+        {
+          "level": 1,
+          "title": "Erster Tipp",
+          "text": "Lies das Wort langsam und achte auf die Stelle mit der Luecke."
+        },
+        {
+          "level": 2,
+          "title": "Zweiter Tipp",
+          "text": "Setze einen Buchstaben ein und pruefe, ob das Wort richtig klingt."
+        }
+      ]
     }
   ]
 }

@@ -37,10 +37,10 @@ node model was simplified around render state and node type.
 - `lib/game/world/lern_fuchs_world_game.dart`
   - Replaced the previous inline private map/background/node/player rendering
     with the new world map components.
-  - Added the five requested nodes: Waldeingang, Lichtung, Alter Baum, Bruecke,
-    and Waldsee.
-  - Preserved the existing World 1 quest ids behind those labels so current
-    tests and quest runtime wiring continue to work.
+  - Added the original World 1 map nodes; the current Kapitel-1 slice now uses
+    four active quest links on Waldeingang, Bruecke, Alter Baum and Lichtung.
+  - Preserved the World 1 quest-id wiring behind those labels so current tests
+    and quest runtime wiring continue to work.
   - Added `onNodeTapped(WorldQuestNode node)` as the tap hook for the quest
     overlay.
 

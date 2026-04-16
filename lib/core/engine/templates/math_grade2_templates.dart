@@ -1,7 +1,7 @@
-/// Mathe-Templates Klasse 2.
+/// Mathe-Templates Klasse 2 sowie einzelne geteilte Vertiefungsformate.
 ///
 /// Inhalte: Uhrzeit (analog, 4 Schwierigkeitsstufen), Geld (Münzen in Cent),
-/// Zahlenmauern, Rechenketten, Textaufgaben.
+/// Zahlenmauern (Kl.1/2), Rechenketten, Textaufgaben.
 import 'dart:math';
 import '../../models/task_model.dart';
 import '../../models/subject.dart';
@@ -164,14 +164,14 @@ class MoneyTemplate extends TaskTemplate {
   }
 }
 
-/// Zahlenmauern — Kl.2
+/// Zahlenmauern — Kl.1/2
 /// In einer Zahlenmauer ist jede Zahl die Summe der beiden darunter.
 class NumberWallTemplate extends TaskTemplate {
-  const NumberWallTemplate()
+  const NumberWallTemplate({int grade = 2})
       : super(
           id: 'zahlenmauern',
           subject: Subject.math,
-          grade: 2,
+          grade: grade,
           topic: 'zahlenmauern',
           minDifficulty: 1,
           maxDifficulty: 4,

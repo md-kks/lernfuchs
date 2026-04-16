@@ -24,56 +24,114 @@
       ]
     },
     {
-      "id": "world1_prolog",
-      "title": "Prolog: Ovas Ruf",
+      "id": "world1_chapter1_ovas_ruf",
+      "title": "Ovas Ruf",
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Willkommen im Fluesterwald. Die Wege sind leise geworden, aber wir koennen sie Schritt fuer Schritt wecken."
+          "text": "Willkommen im Fluesterwald, Fino. Ein weicher Nebel liegt auf den ersten Zeichen, aber wir gehen langsam los."
         },
         {
           "speakerId": "ova",
-          "text": "Loese die erste Lichtspur. Danach wartet dein Baumhaus auf den ersten Fund."
+          "text": "Wenn du den ersten Buchstaben erkennst, findet der Eingang sein warmes Licht wieder."
         }
       ]
     },
     {
-      "id": "world1_zahlenpfad",
+      "id": "world1_chapter1_zahlenpfad",
       "title": "Der Zahlenpfad",
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Diese Steine gehoeren zu den Zahlen. Wenn du genau zaehlst, legt sich der Pfad von selbst."
+          "text": "Hier liegen kleine Zahlensteine. Zaehle sie in Ruhe, dann wird aus dem Nebel ein sicherer Pfad."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Heute reichen die kleinen Zahlen bis zehn. Jeder richtige Schritt macht den Weg klarer."
         }
       ]
     },
     {
-      "id": "world1_buchstabenhain",
-      "title": "Der Buchstabenhain",
+      "id": "world1_chapter1_singende_blaetter",
+      "title": "Die singenden Blaetter",
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Im Hain verstecken sich Anfangslaute. Ein klar erkannter Buchstabe beruhigt die fluesternden Blaetter."
+          "text": "Die Blaetter singen leise vor sich hin. Manche Woerter klingen in kleinen Stuecken."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Sprich das Wort langsam. Wenn du den Takt findest, rauschen die Blaetter wieder freundlich."
         }
       ]
     },
     {
-      "id": "world1_silbenquelle",
-      "title": "Nebenpfad: Silbenquelle",
+      "id": "world1_chapter1_erste_lichtung",
+      "title": "Die erste Lichtung",
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Die Quelle springt im Takt. Sprich das Wort langsam, dann findest du die Silben."
+          "text": "Da vorn wird der Wald heller. Auf der Lichtung funkeln mehr Sternpunkte als zuvor."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Zaehle ruhig weiter bis zwanzig. Dann kann Fino hier kurz ausruhen."
         }
       ]
     },
     {
-      "id": "world1_musterlichtung",
-      "title": "Nebenpfad: Musterlichtung",
+      "id": "world1_chapter2_alter_baum",
+      "title": "Der alte Baum",
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Die Lichter wiederholen sich. Schau nach dem kleinsten Muster, dann weisst du, was als naechstes kommt."
+          "text": "Der alte Baum kennt die kleinen Zahlen schon. Heute schauen wir, wie zwei Zahlen zusammen ein neues Licht ergeben."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Ich gebe dir weniger vor als am Anfang. Du kannst die Zahlen Schritt fuer Schritt zusammenlegen."
+        }
+      ]
+    },
+    {
+      "id": "world1_chapter2_nebelbruecke",
+      "title": "Die Nebelbruecke",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Auf der Bruecke werden ein paar Lichtplanken vom Nebel verdeckt. Schau ruhig, was uebrig bleibt."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Wegnehmen ist auch ein klarer Schritt. Wir bleiben im kleinen Zahlenraum."
+        }
+      ]
+    },
+    {
+      "id": "world1_chapter2_mauer_der_funken",
+      "title": "Die Mauer der Funken",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Diese Funkensteine bauen sich wie eine kleine Zahlenmauer auf."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Zwei Steine unten helfen dem Stein darueber. Wenn du die Ordnung findest, oeffnet sich der Pfad."
+        }
+      ]
+    },
+    {
+      "id": "world1_chapter2_wegweiser_aus_klang",
+      "title": "Die Wegweiser aus Klang",
+      "lines": [
+        {
+          "speakerId": "ova",
+          "text": "Die Wegweiser summen leise. Manche Woerter klingen am Ende gleich, andere brauchen noch einen Buchstaben."
+        },
+        {
+          "speakerId": "ova",
+          "text": "Hoer hin, lies langsam und nimm dir Zeit. So wird der Klangweg klar."
         }
       ]
     }

@@ -223,8 +223,12 @@ Das Design verzichtet auf abstrakte Menüs. Die Navigation erfolgt über eine We
 
 * **Visuelles Design (Biome):** Grüne, leuchtende Wälder, kleine Bäche, sonnendurchflutete Lichtungen. Die Atmosphäre ist sicher und einladend. Touch-Targets sind hier extrem groß (min. 60-80pt), um die noch unsichere Feinmotorik von 6-Jährigen zu unterstützen.25  
 * **Pädagogischer Inhalt:**  
-  * *Mathe:* Zahlenraum bis 20, Mengen erfassen, einfache Addition und Subtraktion, Geometrie (Formen erkennen).  
-  * *Deutsch:* Anlaute erkennen, Silben klatschen, Buchstaben nachspuren.  
+  * *Mathe:* Zahlenraum bis 20, strukturierte Mengenerfassung mit Zehnerfeld/Zwanzigerfeld, Zahlzerlegung und Zahlbeziehungen, flexibles Zählen am Zahlenstrahl, Nachbarzahlen, einfache Addition und Subtraktion, erste Rechenstrategien (Tausch-, Umkehr-, Nachbaraufgaben, Rechnen in Schritten), `zahlenmauern` als frühes Vertiefungsformat ab Kapitel 2, einfache Rechengeschichten, kombinatorische Mini-Aufgaben, Geometrie/Formen, Raumorientierung und Lagebeziehungen.  
+  * *Deutsch:* Anlaute erkennen, Lautsynthese, Silben klatschen, Reime, Buchstaben und Buchstabenverbindungen/Lautgruppen wie `sch`, `ch`, `ie`, erste Sichtwörter/Blitzlesen, lauttreue Wörter schreiben mit silbischem Mitsprechen, Abschreiben mit Fehlervergleich, Satzgrenzen/Satzschlusszeichen vorbereiten, kurze Schreibimpulse und das Alphabet als Ordnungshilfe.  
+* **Kapitelstruktur:** Diese Staffelung ist eine didaktische LernFuchs-Planung und keine pauschale Aussage über alle Bundesländer.
+  * *Kapitel 1 – frühe Grundlagen:* `buchstaben`, `anlaute`, `zahlen_bis_10`, `silben`, `zahlen_bis_20`.
+  * *Kapitel 2 – erste Vertiefung:* `addition_bis_10`, `subtraktion_bis_10`, `zahlenmauern`, `reimwoerter`, `lueckenwoerter`, Lautsynthese, Sichtwortschatz/Blitzlesen und erste lauttreue Wörter. `zahlenmauern` sind hier als klasse-1-fähiges Vertiefungsformat verankert, nicht als Kapitel-1-Grundlage.
+  * *Kapitel 3 – Transfer und Struktur:* `formen`, `zahlenreihen`, `muster`, `handschrift`, `buchstaben_salat`, Raumorientierung/Lagebeziehungen, Zahlenstrahl/Nachbarzahlen, Buchstabenverbindungen, Satzgrenzen/Satzschlusszeichen und kleine Schreibimpulse.
 * **Konkrete Quest-Mechanik (TFLite-Integration): "Das Brücken-Rätsel"**  
   * *Setting:* Fino steht vor einem kleinen Fluss. Eine Holzplanke fehlt.  
   * *Aufgabe:* Auf einem Schild steht: ![][image2].  

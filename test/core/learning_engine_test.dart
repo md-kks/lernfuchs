@@ -61,6 +61,13 @@ void main() {
     );
   });
 
+  test('topicsFor includes class 1 number walls as early extension', () {
+    expect(
+      learning.topicsFor(federalState: 'NW', subject: Subject.math, grade: 1),
+      contains('zahlenmauern'),
+    );
+  });
+
   test(
     'recordResult preserves existing progress persistence behavior',
     () async {

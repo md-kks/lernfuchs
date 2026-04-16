@@ -53,6 +53,7 @@ class TaskGenerator {
     _register(const SubtractionTemplate(grade: 1));
     _register(const ComparisonTemplate());
     _register(const NumberSequenceTemplate());
+    _register(const NumberWallTemplate(grade: 1));
     _register(const ShapeRecognitionTemplate());
     _register(const PatternContinuationTemplate());
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/models/task_model.dart';
 
-/// Zahlenmauer-Widget für [NumberWallTemplate] (topic: `zahlenmauern`, Kl.2).
+/// Zahlenmauer-Widget für [NumberWallTemplate] (topic: `zahlenmauern`, Kl.1/2).
 ///
 /// Zeigt eine 3-stöckige Pyramide (Basis: 3 Felder, Mitte: 2, Spitze: 1).
 /// Invariante: jede Zahl ist die Summe der beiden darunter liegenden.

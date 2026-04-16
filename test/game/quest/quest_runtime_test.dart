@@ -32,19 +32,22 @@ void main() {
       'assets/quests/sample_quests.json',
     );
 
-    expect(quests, hasLength(5));
+    expect(quests, hasLength(8));
     expect(quests.map((quest) => quest.id), [
-      'prolog_ovas_ruf',
-      'main_zahlenpfad',
-      'main_buchstabenhain',
-      'side_silbenquelle',
-      'side_musterlichtung',
+      'chapter1_ovas_ruf',
+      'chapter1_zahlenpfad',
+      'chapter1_singende_blaetter',
+      'chapter1_erste_lichtung',
+      'chapter2_alter_baum',
+      'chapter2_nebelbruecke',
+      'chapter2_mauer_der_funken',
+      'chapter2_wegweiser_aus_klang',
     ]);
     expect(
       quests
           .expand((quest) => quest.steps)
           .where((step) => step.type.name == 'learningChallenge'),
-      hasLength(5),
+      hasLength(9),
     );
     for (final step in quests.expand((quest) => quest.steps)) {
       final challenge = step.learningChallenge;

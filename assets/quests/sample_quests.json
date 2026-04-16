@@ -3,10 +3,10 @@
   "worldId": "fluesterwald",
   "quests": [
     {
-      "id": "prolog_ovas_ruf",
-      "title": "Prolog: Ovas Ruf",
-      "description": "Ova oeffnet den ersten Pfad in den Fluesterwald.",
-      "worldNodeId": "prolog",
+      "id": "chapter1_ovas_ruf",
+      "title": "Ovas Ruf",
+      "description": "Ova begruesst Fino im Fluesterwald. Erste Buchstaben machen den Eingang wieder klar.",
+      "worldNodeId": "waldeingang",
       "unlockCondition": {
         "completedQuestIds": [],
         "worldFlags": {}
@@ -16,30 +16,30 @@
           "id": "intro",
           "type": "dialogue",
           "title": "Ovas Ruf",
-          "dialogueSceneId": "world1_prolog"
+          "dialogueSceneId": "world1_chapter1_ovas_ruf"
         },
         {
           "id": "challenge",
           "type": "learningChallenge",
-          "title": "Erste Lichtspur",
-          "hintSetId": "addition_bis_10_ova",
+          "title": "Erste Buchstaben",
+          "hintSetId": "buchstaben_ova",
           "learningChallenge": {
-            "subject": "math",
+            "subject": "german",
             "grade": 1,
-            "topic": "addition_bis_10",
+            "topic": "buchstaben",
             "difficulty": 1,
             "count": 1,
-            "successText": "Ova nickt: Die erste Spur leuchtet.",
-            "retryText": "Ova sagt: Zaehle die kleinere Zahl langsam dazu."
+            "successText": "Der Eingang leuchtet warm. Fino erkennt den ersten Pfad.",
+            "retryText": "Ova sagt: Schau in Ruhe auf den Anfang des Wortes."
           }
         },
         {
-          "id": "open_prolog",
+          "id": "open_entry",
           "type": "worldState",
           "title": "Eingang erhellt",
           "worldStateChange": {
             "flags": {
-              "prolog_node_state": "completed",
+              "chapter1_ovas_ruf_state": "completed",
               "fluesterwald_entry_open": true
             }
           }
@@ -47,32 +47,32 @@
         {
           "id": "reward",
           "type": "reward",
-          "title": "Sternensamen",
+          "title": "Baumhaus-Laterne",
           "reward": {
             "id": "sternensamen",
-            "title": "Sternensamen",
-            "type": "collectible",
-            "amount": 3,
+            "title": "Baumhaus-Laterne",
+            "type": "upgradeUnlock",
+            "amount": 1,
             "unlockUpgradeId": "baumhaus_laterne"
           }
         }
       ]
     },
     {
-      "id": "main_zahlenpfad",
+      "id": "chapter1_zahlenpfad",
       "title": "Der Zahlenpfad",
-      "description": "Eine Zahlenbruecke fuehrt tiefer in den Wald.",
-      "worldNodeId": "zahlenpfad",
+      "description": "Kleine Zahlensteine zeigen Fino den naechsten sicheren Schritt.",
+      "worldNodeId": "bruecke",
       "unlockCondition": {
-        "completedQuestIds": ["prolog_ovas_ruf"],
+        "completedQuestIds": ["chapter1_ovas_ruf"],
         "worldFlags": {}
       },
       "steps": [
         {
           "id": "intro",
           "type": "dialogue",
-          "title": "Zahlenpfad",
-          "dialogueSceneId": "world1_zahlenpfad"
+          "title": "Der Zahlenpfad",
+          "dialogueSceneId": "world1_chapter1_zahlenpfad"
         },
         {
           "id": "challenge",
@@ -85,17 +85,17 @@
             "topic": "zahlen_bis_10",
             "difficulty": 1,
             "count": 1,
-            "successText": "Die Steine liegen jetzt in der richtigen Reihenfolge.",
-            "retryText": "Ova sagt: Schau dir die Punkte noch einmal in Ruhe an."
+            "successText": "Die Zahlensteine liegen klar vor Fino.",
+            "retryText": "Ova sagt: Zaehle langsam, ein Stein nach dem anderen."
           }
         },
         {
-          "id": "open_path",
+          "id": "open_number_path",
           "type": "worldState",
-          "title": "Pfad gelegt",
+          "title": "Zahlenpfad gelegt",
           "worldStateChange": {
             "flags": {
-              "zahlenpfad_node_state": "completed",
+              "chapter1_zahlenpfad_state": "completed",
               "zahlenpfad_bridge_ready": true
             }
           }
@@ -108,88 +108,31 @@
             "id": "sternensamen",
             "title": "Sternensamen",
             "type": "collectible",
-            "amount": 1,
-            "unlockUpgradeId": "baumhaus_bank"
+            "amount": 2
           }
         }
       ]
     },
     {
-      "id": "main_buchstabenhain",
-      "title": "Der Buchstabenhain",
-      "description": "Die Baeume fluestern Ova erste Buchstaben zu.",
-      "worldNodeId": "buchstabenhain",
+      "id": "chapter1_singende_blaetter",
+      "title": "Die singenden Blaetter",
+      "description": "Die Blaetter rauschen im Silbentakt und festigen die ersten Laute.",
+      "worldNodeId": "alter_baum",
       "unlockCondition": {
-        "completedQuestIds": ["main_zahlenpfad"],
+        "completedQuestIds": ["chapter1_zahlenpfad"],
         "worldFlags": {}
       },
       "steps": [
         {
           "id": "intro",
           "type": "dialogue",
-          "title": "Buchstabenhain",
-          "dialogueSceneId": "world1_buchstabenhain"
+          "title": "Die singenden Blaetter",
+          "dialogueSceneId": "world1_chapter1_singende_blaetter"
         },
         {
           "id": "challenge",
           "type": "learningChallenge",
-          "title": "Buchstaben erkennen",
-          "hintSetId": "buchstaben_ova",
-          "learningChallenge": {
-            "subject": "german",
-            "grade": 1,
-            "topic": "buchstaben",
-            "difficulty": 1,
-            "count": 1,
-            "successText": "Der Hain klingt klarer.",
-            "retryText": "Ova sagt: Hoere auf den ersten Laut des Wortes."
-          }
-        },
-        {
-          "id": "open_hain",
-          "type": "worldState",
-          "title": "Hain beruhigt",
-          "worldStateChange": {
-            "flags": {
-              "buchstabenhain_node_state": "completed",
-              "letters_whispering": true
-            }
-          }
-        },
-        {
-          "id": "reward",
-          "type": "reward",
-          "title": "Sternensamen",
-          "reward": {
-            "id": "sternensamen",
-            "title": "Sternensamen",
-            "type": "collectible",
-            "amount": 1,
-            "unlockUpgradeId": "baumhaus_kristall_blau"
-          }
-        }
-      ]
-    },
-    {
-      "id": "side_silbenquelle",
-      "title": "Nebenpfad: Silbenquelle",
-      "description": "Ein kleiner Bach plaetschert in Silben.",
-      "worldNodeId": "silbenquelle",
-      "unlockCondition": {
-        "completedQuestIds": ["prolog_ovas_ruf"],
-        "worldFlags": {}
-      },
-      "steps": [
-        {
-          "id": "intro",
-          "type": "dialogue",
-          "title": "Silbenquelle",
-          "dialogueSceneId": "world1_silbenquelle"
-        },
-        {
-          "id": "challenge",
-          "type": "learningChallenge",
-          "title": "Silben zaehlen",
+          "title": "Silben hoeren",
           "hintSetId": "silben_ova",
           "learningChallenge": {
             "subject": "german",
@@ -197,74 +140,130 @@
             "topic": "silben",
             "difficulty": 1,
             "count": 1,
-            "successText": "Die Quelle plaetschert im richtigen Takt.",
-            "retryText": "Ova sagt: Sprich das Wort langsam und klatsche mit."
+            "successText": "Die Blaetter singen wieder im ruhigen Takt.",
+            "retryText": "Ova sagt: Sprich das Wort langsam und klatsche leise mit."
           }
         },
         {
-          "id": "open_source",
+          "id": "calm_leaves",
           "type": "worldState",
-          "title": "Quelle gefunden",
+          "title": "Blaetter beruhigt",
           "worldStateChange": {
             "flags": {
-              "silbenquelle_node_state": "completed",
-              "silbenquelle_clear": true
+              "chapter1_singende_blaetter_state": "completed",
+              "singende_blaetter_clear": true
             }
           }
         },
         {
           "id": "reward",
           "type": "reward",
-          "title": "Sternensamen",
+          "title": "Blauer Baumhaus-Kristall",
           "reward": {
             "id": "sternensamen",
-            "title": "Sternensamen",
-            "type": "collectible",
+            "title": "Blauer Baumhaus-Kristall",
+            "type": "upgradeUnlock",
             "amount": 1,
-            "unlockUpgradeId": "baumhaus_goldener_schwanz"
+            "unlockUpgradeId": "baumhaus_kristall_blau"
           }
         }
       ]
     },
     {
-      "id": "side_musterlichtung",
-      "title": "Nebenpfad: Musterlichtung",
-      "description": "Lichter blinken in einer kleinen Folge.",
-      "worldNodeId": "musterlichtung",
+      "id": "chapter1_erste_lichtung",
+      "title": "Die erste Lichtung",
+      "description": "Auf der ersten Lichtung zaehlt Fino helle Sternpunkte bis zwanzig.",
+      "worldNodeId": "lichtung",
       "unlockCondition": {
-        "completedQuestIds": ["main_zahlenpfad"],
+        "completedQuestIds": ["chapter1_singende_blaetter"],
         "worldFlags": {}
       },
       "steps": [
         {
           "id": "intro",
           "type": "dialogue",
-          "title": "Musterlichtung",
-          "dialogueSceneId": "world1_musterlichtung"
+          "title": "Die erste Lichtung",
+          "dialogueSceneId": "world1_chapter1_erste_lichtung"
         },
         {
           "id": "challenge",
           "type": "learningChallenge",
-          "title": "Muster fortsetzen",
-          "hintSetId": "muster_ova",
+          "title": "Zahlen bis 20",
+          "hintSetId": "zahlen_bis_20_ova",
           "learningChallenge": {
             "subject": "math",
             "grade": 1,
-            "topic": "muster",
+            "topic": "zahlen_bis_20",
             "difficulty": 1,
             "count": 1,
-            "successText": "Die Lichter folgen deinem Muster.",
-            "retryText": "Ova sagt: Wiederholt sich die Folge nach zwei Zeichen?"
+            "successText": "Die Lichtung ist klar. Fino findet einen freundlichen Rastplatz.",
+            "retryText": "Ova sagt: Schau genau hin und pruefe die Zahl Schritt fuer Schritt."
           }
         },
         {
           "id": "open_clearing",
           "type": "worldState",
-          "title": "Lichtung sortiert",
+          "title": "Lichtung gefunden",
           "worldStateChange": {
             "flags": {
-              "musterlichtung_node_state": "completed",
-              "musterlichtung_glow": true
+              "chapter1_erste_lichtung_state": "completed",
+              "erste_lichtung_clear": true
+            }
+          }
+        },
+        {
+          "id": "reward",
+          "type": "reward",
+          "title": "Baumhaus-Bank",
+          "reward": {
+            "id": "sternensamen",
+            "title": "Baumhaus-Bank",
+            "type": "upgradeUnlock",
+            "amount": 1,
+            "unlockUpgradeId": "baumhaus_bank"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter2_alter_baum",
+      "title": "Der alte Baum",
+      "description": "Die Jahresringe des alten Baums leuchten, wenn kleine Zahlen zusammenfinden.",
+      "worldNodeId": "chapter2_alter_baum",
+      "unlockCondition": {
+        "completedQuestIds": ["chapter1_erste_lichtung"],
+        "worldFlags": {}
+      },
+      "steps": [
+        {
+          "id": "intro",
+          "type": "dialogue",
+          "title": "Der alte Baum",
+          "dialogueSceneId": "world1_chapter2_alter_baum"
+        },
+        {
+          "id": "challenge",
+          "type": "learningChallenge",
+          "title": "Zahlen zusammenlegen",
+          "hintSetId": "addition_bis_10_ova",
+          "learningChallenge": {
+            "subject": "math",
+            "grade": 1,
+            "topic": "addition_bis_10",
+            "difficulty": 1,
+            "count": 1,
+            "successText": "Die Jahresringe leuchten in ruhigen Paaren.",
+            "retryText": "Ova sagt: Starte mit der groesseren Zahl und zaehle langsam weiter."
+          }
+        },
+        {
+          "id": "light_tree_rings",
+          "type": "worldState",
+          "title": "Jahresringe erhellt",
+          "worldStateChange": {
+            "flags": {
+              "chapter2_alter_baum_state": "completed",
+              "alter_baum_rings_glow": true
             }
           }
         },
@@ -276,7 +275,187 @@
             "id": "sternensamen",
             "title": "Sternensamen",
             "type": "collectible",
-            "amount": 1
+            "amount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter2_nebelbruecke",
+      "title": "Die Nebelbruecke",
+      "description": "Ein paar Lichtplanken verschwinden im Nebel. Fino schaut, was uebrig bleibt.",
+      "worldNodeId": "chapter2_nebelbruecke",
+      "unlockCondition": {
+        "completedQuestIds": ["chapter2_alter_baum"],
+        "worldFlags": {}
+      },
+      "steps": [
+        {
+          "id": "intro",
+          "type": "dialogue",
+          "title": "Die Nebelbruecke",
+          "dialogueSceneId": "world1_chapter2_nebelbruecke"
+        },
+        {
+          "id": "challenge",
+          "type": "learningChallenge",
+          "title": "Was bleibt uebrig?",
+          "hintSetId": "subtraktion_bis_10_ova",
+          "learningChallenge": {
+            "subject": "math",
+            "grade": 1,
+            "topic": "subtraktion_bis_10",
+            "difficulty": 1,
+            "count": 1,
+            "successText": "Die Bruecke wird klarer und traegt Fino sicher weiter.",
+            "retryText": "Ova sagt: Nimm die kleinere Zahl Schritt fuer Schritt weg."
+          }
+        },
+        {
+          "id": "clear_bridge",
+          "type": "worldState",
+          "title": "Bruecke geklaert",
+          "worldStateChange": {
+            "flags": {
+              "chapter2_nebelbruecke_state": "completed",
+              "nebelbruecke_clear": true
+            }
+          }
+        },
+        {
+          "id": "reward",
+          "type": "reward",
+          "title": "Sternensamen",
+          "reward": {
+            "id": "sternensamen",
+            "title": "Sternensamen",
+            "type": "collectible",
+            "amount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter2_mauer_der_funken",
+      "title": "Die Mauer der Funken",
+      "description": "Funkensteine stapeln sich zu einer freundlichen Zahlenmauer.",
+      "worldNodeId": "chapter2_mauer_der_funken",
+      "unlockCondition": {
+        "completedQuestIds": ["chapter2_nebelbruecke"],
+        "worldFlags": {}
+      },
+      "steps": [
+        {
+          "id": "intro",
+          "type": "dialogue",
+          "title": "Die Mauer der Funken",
+          "dialogueSceneId": "world1_chapter2_mauer_der_funken"
+        },
+        {
+          "id": "challenge",
+          "type": "learningChallenge",
+          "title": "Zahlenmauer",
+          "hintSetId": "zahlenmauern_ova",
+          "learningChallenge": {
+            "subject": "math",
+            "grade": 1,
+            "topic": "zahlenmauern",
+            "difficulty": 1,
+            "count": 1,
+            "successText": "Die Funkenmauer glimmt ruhig von unten nach oben.",
+            "retryText": "Ova sagt: Zwei untere Steine helfen dem Stein darueber."
+          }
+        },
+        {
+          "id": "open_spark_wall",
+          "type": "worldState",
+          "title": "Funkenmauer geordnet",
+          "worldStateChange": {
+            "flags": {
+              "chapter2_mauer_der_funken_state": "completed",
+              "funkenmauer_path_open": true
+            }
+          }
+        },
+        {
+          "id": "reward",
+          "type": "reward",
+          "title": "Sternensamen",
+          "reward": {
+            "id": "sternensamen",
+            "title": "Sternensamen",
+            "type": "collectible",
+            "amount": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter2_wegweiser_aus_klang",
+      "title": "Die Wegweiser aus Klang",
+      "description": "Kleine Wegweiser summen Reime und zeigen fehlende Buchstaben.",
+      "worldNodeId": "chapter2_wegweiser_aus_klang",
+      "unlockCondition": {
+        "completedQuestIds": ["chapter2_mauer_der_funken"],
+        "worldFlags": {}
+      },
+      "steps": [
+        {
+          "id": "intro",
+          "type": "dialogue",
+          "title": "Die Wegweiser aus Klang",
+          "dialogueSceneId": "world1_chapter2_wegweiser_aus_klang"
+        },
+        {
+          "id": "rhyme_challenge",
+          "type": "learningChallenge",
+          "title": "Reimweg",
+          "hintSetId": "reimwoerter_ova",
+          "learningChallenge": {
+            "subject": "german",
+            "grade": 1,
+            "topic": "reimwoerter",
+            "difficulty": 1,
+            "count": 1,
+            "successText": "Der erste Wegweiser klingt klar und freundlich.",
+            "retryText": "Ova sagt: Sprich beide Woerter langsam. Klingt das Ende gleich?"
+          }
+        },
+        {
+          "id": "missing_letter_challenge",
+          "type": "learningChallenge",
+          "title": "Klangzeichen",
+          "hintSetId": "lueckenwoerter_ova",
+          "learningChallenge": {
+            "subject": "german",
+            "grade": 1,
+            "topic": "lueckenwoerter",
+            "difficulty": 1,
+            "count": 1,
+            "successText": "Die Wegweiser zeigen den naechsten hellen Pfad.",
+            "retryText": "Ova sagt: Lies das Wort langsam und pruefe den fehlenden Buchstaben."
+          }
+        },
+        {
+          "id": "tune_signposts",
+          "type": "worldState",
+          "title": "Wegweiser gestimmt",
+          "worldStateChange": {
+            "flags": {
+              "chapter2_wegweiser_aus_klang_state": "completed",
+              "klangwegweiser_clear": true
+            }
+          }
+        },
+        {
+          "id": "reward",
+          "type": "reward",
+          "title": "Sternensamen",
+          "reward": {
+            "id": "sternensamen",
+            "title": "Sternensamen",
+            "type": "collectible",
+            "amount": 2
           }
         }
       ]

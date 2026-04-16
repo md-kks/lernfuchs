@@ -3,87 +3,115 @@
     {
       "stationId": "waldeingang",
       "intro": [
-        { "speaker": "ova", "animation": "land_on_branch", "text": "Fino! Der Flüsterwald braucht unsere Hilfe!", "tts": true },
-        { "speaker": "brumm", "animation": "wave", "text": "Der Nebelschatten hat die erste Wache verzaubert!", "tts": true },
-        { "speaker": "fino", "animation": "look_around", "text": "Ich bin bereit. Was muss ich tun?", "tts": true },
-        { "speaker": "ova", "animation": "wing_flap", "text": "Beweise dein Können — dann öffnet sich der Weg!", "tts": true }
+        { "speaker": "ova", "animation": "land_on_branch", "text": "Fino, hoerst du das leise Rufen?", "tts": true },
+        { "speaker": "fino", "animation": "look_around", "text": "Der Wald klingt freundlich, aber der Weg ist ganz verschwommen.", "tts": true },
+        { "speaker": "ova", "animation": "wing_flap", "text": "Dann beginnen wir mit den ersten Buchstaben. Einer nach dem anderen.", "tts": true }
       ],
       "progressMilestones": [
-        { "atTask": 2, "sceneEvent": "sunrays_brighten", "ovaText": "Gut gemacht! Die Wache beginnt zu weichen!" },
-        { "atTask": 4, "sceneEvent": "archway_glow", "ovaText": "Noch zwei! Das Tor öffnet sich schon!" },
-        { "atTask": 6, "sceneEvent": "archway_open", "ovaText": null }
+        { "atTask": 1, "sceneEvent": "sunrays_brighten", "ovaText": "Sehr gut. Der Eingang wird heller." }
       ],
-      "outro": { "ovaText": "Fantastisch! Der Eingang ist frei!", "finoAnimation": "run_through_archway", "brummAnimation": "celebrate_arms_up", "crystalFly": true },
-      "wrongAnswerPhrases": ["Fast! Versuch es noch einmal.", "Keine Sorge, du schaffst das!", "Noch ein Versuch!"],
-      "correctPhrases": ["Wunderbar!", "Genau richtig!", "Super gemacht!"]
-    },
-    {
-      "stationId": "lichtung",
-      "intro": [
-        { "speaker": "brumm", "animation": "point_at_pedestal", "text": "Fino, schau! Ein Wissenskristall — aber er ist vom Nebel bedeckt!", "tts": true },
-        { "speaker": "ova", "animation": "land_on_branch", "text": "Wir müssen die Rätsel lösen um ihn zu befreien.", "tts": true },
-        { "speaker": "fino", "animation": "step_forward", "text": "Ich zähle die Punkte!", "tts": true },
-        { "speaker": "ova", "animation": "wing_flap", "text": "Richtig! Zähle genau — jeder Punkt zählt!", "tts": true }
-      ],
-      "progressMilestones": [
-        { "atTask": 2, "sceneEvent": "crystal_flicker", "ovaText": "Der Kristall erwacht! Weiter so!" },
-        { "atTask": 4, "sceneEvent": "crystal_half_glow", "ovaText": "Halbzeit! Der Nebel zieht sich zurück!" },
-        { "atTask": 6, "sceneEvent": "crystal_full_glow", "ovaText": null }
-      ],
-      "outro": { "ovaText": "Der Kristall gehört dir! Gut gemacht!", "finoAnimation": "catch_crystal", "brummAnimation": "jump_for_joy", "crystalFly": true },
-      "wrongAnswerPhrases": ["Zähle nochmal langsam!", "Fast — versuch es nochmal.", "Du schaffst das!"],
-      "correctPhrases": ["Perfekt gezählt!", "Brillant!", "Genau!"]
-    },
-    {
-      "stationId": "alter_baum",
-      "intro": [
-        { "speaker": "ova", "animation": "perch_on_branch", "text": "Siehst du die leuchtenden Runen am Alten Baum?", "tts": true },
-        { "speaker": "fino", "animation": "look_up", "text": "Was bedeuten sie?", "tts": true },
-        { "speaker": "brumm", "animation": "scratch_head", "text": "Der Baum kennt alle Buchstaben des Waldes.", "tts": true },
-        { "speaker": "ova", "animation": "wing_flap", "text": "Entziffere sie — dann teilt er sein Wissen mit dir!", "tts": true }
-      ],
-      "progressMilestones": [
-        { "atTask": 2, "sceneEvent": "rune_glow_1", "ovaText": "Die erste Rune leuchtet! Weiter!" },
-        { "atTask": 4, "sceneEvent": "rune_glow_2", "ovaText": "Der Baum öffnet sich dir!" },
-        { "atTask": 6, "sceneEvent": "runes_all_glow", "ovaText": null }
-      ],
-      "outro": { "ovaText": "Das Wissen des Alten Baumes gehört dir!", "finoAnimation": "touch_tree", "brummAnimation": "nod_approval", "crystalFly": true },
-      "wrongAnswerPhrases": ["Sprich das Wort lautlos mit!", "Fast — hör auf den ersten Laut.", "Noch einmal!"],
-      "correctPhrases": ["Der Baum neigt sich vor dir!", "Wunderbar!", "Genau richtig!"]
+      "outro": { "ovaText": "Die Laterne wartet im Baumhaus. Ein schoener erster Fund!", "finoAnimation": "run_through_archway", "brummAnimation": "celebrate_arms_up", "crystalFly": true },
+      "wrongAnswerPhrases": ["Fast. Schau noch einmal auf den Anfang.", "Ganz ruhig, Fino. Wir probieren es nochmal.", "Ova bleibt bei dir."],
+      "correctPhrases": ["Wunderbar!", "Genau richtig!", "Der erste Pfad leuchtet!"]
     },
     {
       "stationId": "bruecke",
       "intro": [
-        { "speaker": "brumm", "animation": "point_at_gate", "text": "Das Brückentor! Es ist verschlossen!", "tts": true },
-        { "speaker": "fino", "animation": "try_gate", "text": "Ich komme nicht durch...", "tts": true },
-        { "speaker": "ova", "animation": "land_on_railing", "text": "Der Nebelschatten hat es versiegelt. Es gibt ein Zauberwort!", "tts": true },
-        { "speaker": "ova", "animation": "wing_flap", "text": "Zähle die Silben — dann öffnet sich das Tor!", "tts": true }
+        { "speaker": "fino", "animation": "point_at_gate", "text": "Hier liegen Zahlensteine im Nebel.", "tts": true },
+        { "speaker": "ova", "animation": "land_on_railing", "text": "Zaehle sie langsam. Bis zehn ist heute genug.", "tts": true },
+        { "speaker": "fino", "animation": "step_forward", "text": "Dann findet der Pfad bestimmt zusammen.", "tts": true }
       ],
       "progressMilestones": [
-        { "atTask": 2, "sceneEvent": "gate_vibrate", "ovaText": "Das Tor bebt! Weiter so!" },
-        { "atTask": 4, "sceneEvent": "gate_half_open", "ovaText": "Halb offen! Brumm macht sich bereit!" },
-        { "atTask": 6, "sceneEvent": "gate_open", "ovaText": null }
+        { "atTask": 1, "sceneEvent": "gate_half_open", "ovaText": "Der Zahlenpfad wird klarer." }
       ],
-      "outro": { "ovaText": "Das Tor ist offen! Fino läuft hindurch!", "finoAnimation": "run_through_gate", "brummAnimation": "cheer_arms_up", "crystalFly": true },
-      "wrongAnswerPhrases": ["Sprich das Wort langsam!", "Fast! Versuch es nochmal.", "Keine Sorge!"],
-      "correctPhrases": ["Das Tor gibt nach!", "Fantastisch!", "Perfekt!"]
+      "outro": { "ovaText": "Die Steine liegen sicher. Nimm die Sternensamen mit.", "finoAnimation": "run_through_gate", "brummAnimation": "cheer_arms_up", "crystalFly": true },
+      "wrongAnswerPhrases": ["Zaehle nochmal langsam.", "Fast. Ein Stein nach dem anderen.", "Du bist nah dran."],
+      "correctPhrases": ["Gut gezaehlt!", "Genau!", "Der Pfad haelt."]
     },
     {
-      "stationId": "waldsee",
+      "stationId": "alter_baum",
       "intro": [
-        { "speaker": "fino", "animation": "look_at_lake", "text": "Der Waldsee... aber wo sind die Trittsteine?", "tts": true },
-        { "speaker": "ova", "animation": "circle_overhead", "text": "Der Nebelschatten hat sie versenkt!", "tts": true },
-        { "speaker": "brumm", "animation": "point_at_water", "text": "Ich sehe Muster im Wasser...", "tts": true },
-        { "speaker": "ova", "animation": "wing_flap", "text": "Erkenne das Muster — dann tauchen die Steine auf!", "tts": true }
+        { "speaker": "ova", "animation": "perch_on_branch", "text": "Die Blaetter am Alten Baum singen heute ganz leise.", "tts": true },
+        { "speaker": "fino", "animation": "look_up", "text": "Ich hoere kleine Wortstuecke.", "tts": true },
+        { "speaker": "ova", "animation": "wing_flap", "text": "Das sind Silben. Klatsche sie sanft mit.", "tts": true }
       ],
       "progressMilestones": [
-        { "atTask": 2, "sceneEvent": "stone_appear_1", "ovaText": "Ein Stein taucht auf! Weiter!" },
-        { "atTask": 4, "sceneEvent": "stone_appear_2", "ovaText": "Noch mehr Steine! Der Weg entsteht!" },
-        { "atTask": 6, "sceneEvent": "all_stones", "ovaText": null }
+        { "atTask": 1, "sceneEvent": "rune_glow_1", "ovaText": "Der Takt stimmt. Die Blaetter klingen klarer." }
       ],
-      "outro": { "ovaText": "Der Weg ist frei! Fino überquert den See!", "finoAnimation": "hop_across_stones", "brummAnimation": "wave_goodbye", "crystalFly": true },
-      "wrongAnswerPhrases": ["Suche die Zeichen die sich wiederholen!", "Fast — schau nochmal genau hin.", "Du schaffst das!"],
-      "correctPhrases": ["Ein Stein taucht auf!", "Genau das Muster!", "Wunderbar!"]
+      "outro": { "ovaText": "Der Baum schenkt deinem Baumhaus einen blauen Kristall.", "finoAnimation": "touch_tree", "brummAnimation": "nod_approval", "crystalFly": true },
+      "wrongAnswerPhrases": ["Sprich das Wort langsam.", "Klatsche die Wortstuecke mit.", "Noch einmal in Ruhe."],
+      "correctPhrases": ["Schoener Takt!", "Richtig gehoert!", "Die Blaetter singen mit."]
+    },
+    {
+      "stationId": "lichtung",
+      "intro": [
+        { "speaker": "fino", "animation": "look_at_lake", "text": "Da vorne ist eine helle Lichtung.", "tts": true },
+        { "speaker": "ova", "animation": "circle_overhead", "text": "Im Moos funkeln Sternpunkte. Manche Zahlen sind schon groesser als zehn.", "tts": true },
+        { "speaker": "fino", "animation": "step_forward", "text": "Ich zaehle langsam weiter.", "tts": true }
+      ],
+      "progressMilestones": [
+        { "atTask": 1, "sceneEvent": "crystal_half_glow", "ovaText": "Die Lichtung wird klar." }
+      ],
+      "outro": { "ovaText": "Hier kann Fino ausruhen. Die Baumhaus-Bank ist freigeschaltet.", "finoAnimation": "catch_crystal", "brummAnimation": "jump_for_joy", "crystalFly": true },
+      "wrongAnswerPhrases": ["Zaehle noch einmal langsam.", "Halte bei zehn kurz inne.", "Fast. Ein Sternpunkt nach dem anderen."],
+      "correctPhrases": ["Gut weitergezaehlt!", "Prima gesehen!", "Die Lichtung leuchtet."]
+    },
+    {
+      "stationId": "chapter2_alter_baum",
+      "intro": [
+        { "speaker": "ova", "animation": "perch_on_branch", "text": "Der alte Baum zeigt neue Jahresringe.", "tts": true },
+        { "speaker": "fino", "animation": "look_up", "text": "Sie leuchten immer zu zweit.", "tts": true },
+        { "speaker": "ova", "animation": "wing_flap", "text": "Dann legen wir kleine Zahlen zusammen.", "tts": true }
+      ],
+      "progressMilestones": [
+        { "atTask": 1, "sceneEvent": "rune_glow_2", "ovaText": "Die Ringe antworten. Das passt gut." }
+      ],
+      "outro": { "ovaText": "Der Baum wirkt wacher. Nimm die Sternensamen mit.", "finoAnimation": "touch_tree", "brummAnimation": "nod_approval", "crystalFly": true },
+      "wrongAnswerPhrases": ["Zaehle langsam weiter.", "Starte mit der groesseren Zahl.", "Fast. Probier es noch einmal."],
+      "correctPhrases": ["Gut zusammengelegt!", "Genau.", "Die Ringe leuchten."]
+    },
+    {
+      "stationId": "chapter2_nebelbruecke",
+      "intro": [
+        { "speaker": "fino", "animation": "point_at_gate", "text": "Auf der Bruecke fehlen Lichtplanken.", "tts": true },
+        { "speaker": "ova", "animation": "land_on_railing", "text": "Der Nebel nimmt ein paar weg. Schau, was uebrig bleibt.", "tts": true },
+        { "speaker": "fino", "animation": "step_forward", "text": "Ich gehe Schritt fuer Schritt.", "tts": true }
+      ],
+      "progressMilestones": [
+        { "atTask": 1, "sceneEvent": "gate_half_open", "ovaText": "Die Bruecke wird klarer." }
+      ],
+      "outro": { "ovaText": "Der Weg haelt. Das war ein ruhiger Rechenschritt.", "finoAnimation": "run_through_gate", "brummAnimation": "cheer_arms_up", "crystalFly": true },
+      "wrongAnswerPhrases": ["Nimm langsam weg.", "Zaehle noch einmal rueckwaerts.", "Du bist nah dran."],
+      "correctPhrases": ["Richtig weggenommen!", "Genau.", "Die Planken leuchten."]
+    },
+    {
+      "stationId": "chapter2_mauer_der_funken",
+      "intro": [
+        { "speaker": "ova", "animation": "land_on_branch", "text": "Vor uns steht eine kleine Mauer aus Funkensteinen.", "tts": true },
+        { "speaker": "fino", "animation": "look_around", "text": "Die oberen Steine warten auf die unteren.", "tts": true },
+        { "speaker": "ova", "animation": "wing_flap", "text": "Genau. Zwei Steine helfen dem Stein darueber.", "tts": true }
+      ],
+      "progressMilestones": [
+        { "atTask": 1, "sceneEvent": "archway_glow", "ovaText": "Die Funken ordnen sich." }
+      ],
+      "outro": { "ovaText": "Die Mauer oeffnet einen hellen Seitenpfad.", "finoAnimation": "run_through_archway", "brummAnimation": "celebrate_arms_up", "crystalFly": true },
+      "wrongAnswerPhrases": ["Schau auf die zwei Steine darunter.", "Welche Zahl passt in die Mauer?", "Fast. Pruefe die Nachbarn."],
+      "correctPhrases": ["Die Mauer stimmt!", "Gut gebaut!", "Die Funken leuchten."]
+    },
+    {
+      "stationId": "chapter2_wegweiser_aus_klang",
+      "intro": [
+        { "speaker": "ova", "animation": "circle_overhead", "text": "Diese Wegweiser summen leise.", "tts": true },
+        { "speaker": "fino", "animation": "look_at_lake", "text": "Manche Woerter klingen gleich am Ende.", "tts": true },
+        { "speaker": "ova", "animation": "wing_flap", "text": "Und manche brauchen noch ein kleines Zeichen.", "tts": true }
+      ],
+      "progressMilestones": [
+        { "atTask": 1, "sceneEvent": "crystal_flicker", "ovaText": "Der erste Klang ist klar." },
+        { "atTask": 2, "sceneEvent": "crystal_half_glow", "ovaText": "Der Wegweiser zeigt weiter." }
+      ],
+      "outro": { "ovaText": "Der Klangweg ist bereit fuer das naechste Kapitel.", "finoAnimation": "catch_crystal", "brummAnimation": "jump_for_joy", "crystalFly": true },
+      "wrongAnswerPhrases": ["Hoer auf das Wortende.", "Lies das Wort langsam.", "Noch einmal in Ruhe."],
+      "correctPhrases": ["Das klingt klar!", "Gut gehoert!", "Der Wegweiser summt."]
     }
   ]
 }

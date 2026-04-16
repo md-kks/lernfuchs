@@ -111,6 +111,23 @@ void main() {
     });
   });
 
+  group('TaskGenerator grade 1 number walls', () {
+    test('generates class 1 zahlenmauern sessions', () {
+      final tasks = TaskGenerator.generateSession(
+        subject: Subject.math,
+        grade: 1,
+        topic: 'zahlenmauern',
+        difficulty: 1,
+        count: 3,
+        seed: 11,
+      );
+
+      expect(tasks, hasLength(3));
+      expect(tasks.every((task) => task.grade == 1), isTrue);
+      expect(tasks.every((task) => task.topic == 'zahlenmauern'), isTrue);
+    });
+  });
+
   group('DivisionWithRemainderTemplate', () {
     const template = DivisionWithRemainderTemplate();
 

@@ -1,5 +1,14 @@
 # Documentation Implementation Plan
 
+> **Hinweis zum Status:** Diese Datei ist ein historischer/generierter
+> Planungsstand. Sie ist nicht die maßgebliche Quelle für die aktuelle
+> Klasse-1-/World-1-Kapitelstruktur. Für die kanonische Kapitel- und
+> World-1-Planung gelten insbesondere `docs/world1_vertical_slice.md` sowie die
+> aktuellen Hauptkonzeptdokumente zu LernFuchs / World 1 / Klasse 1. Einzelne
+> Listen und Bestände in dieser Datei können weiterhin nützlich sein, dürfen
+> aber nicht als alleinige Wahrheit für die aktuelle Kapitelstruktur gelesen
+> werden.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Alle 6 fehlenden Dokumentationsdateien schreiben, die das Projekt für Coding Agents und neue Entwickler verständlich machen.
@@ -247,9 +256,10 @@ in einer Flat-Map mit dem Schlüssel `"<subject.id>_<grade>_<topic>"`.
 | `math_1_zahlen_bis_20` | `CountDotsTemplate`, `NumberWritingTemplate` |
 | `math_1_addition_bis_10` | `AdditionTemplate(grade: 1)` |
 | `math_1_subtraktion_bis_10` | `SubtractionTemplate(grade: 1)` |
-| `math_1_formen` | `ShapeRecognitionTemplate` |
 | `math_1_groesser_kleiner` | `ComparisonTemplate` |
 | `math_1_zahlenreihen` | `NumberSequenceTemplate` |
+| `math_1_zahlenmauern` | `NumberWallTemplate(grade: 1)` |
+| `math_1_formen` | `ShapeRecognitionTemplate` |
 | `math_1_muster` | `PatternContinuationTemplate` |
 
 #### Mathe Klasse 2
@@ -260,7 +270,7 @@ in einer Flat-Map mit dem Schlüssel `"<subject.id>_<grade>_<topic>"`.
 | `math_2_einmaleins` | `TimesTableTemplate` |
 | `math_2_uhrzeit` | `ClockTemplate` |
 | `math_2_geld` | `MoneyTemplate` |
-| `math_2_zahlenmauern` | `NumberWallTemplate` |
+| `math_2_zahlenmauern` | `NumberWallTemplate(grade: 2)` |
 | `math_2_rechenketten` | `CalculationChainTemplate` |
 | `math_2_textaufgaben` | `WordProblemGrade2Template` |
 
@@ -423,7 +433,7 @@ Die Reihenfolge bestimmt die Anzeigereihenfolge in `SubjectOverviewScreen`.
 
 | Klasse | Topics (in Reihenfolge) |
 |---|---|
-| 1 | zahlen_bis_10, zahlen_bis_20, addition_bis_10, subtraktion_bis_10, formen, groesser_kleiner, zahlenreihen, muster |
+| 1 | zahlen_bis_10, zahlen_bis_20, addition_bis_10, subtraktion_bis_10, groesser_kleiner, zahlenmauern, formen, zahlenreihen, muster |
 | 2 | addition_bis_100, subtraktion_bis_100, einmaleins, uhrzeit, geld, zahlenmauern, rechenketten, textaufgaben |
 | 3 | schriftliche_addition, schriftliche_subtraktion, multiplikation, division_mit_rest, groessen_umrechnen, geometrie, textaufgaben_3 |
 | 4 | schriftliche_multiplikation, schriftliche_division, brueche, dezimalzahlen, diagramme, grosse_zahlen, sachaufgaben_4 |

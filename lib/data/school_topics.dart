@@ -10,6 +10,7 @@ const Map<int, List<SchoolTopic>> schoolTopicsByClass = {
     SchoolTopic('Zahlen bis 20', ['zahlen_bis_10', 'zahlen_bis_20']),
     SchoolTopic('Einfache Addition', ['addition_bis_10', 'addition_bis_20']),
     SchoolTopic('Einfache Subtraktion', ['subtraktion_bis_10']),
+    SchoolTopic('Zahlzerlegung und Zahlenmauern', ['zahlenmauern']),
     SchoolTopic('Buchstaben lernen', ['buchstaben']),
     SchoolTopic('Silben klatschen', ['silben']),
     SchoolTopic('Anlaute erkennen', ['anlaute']),
