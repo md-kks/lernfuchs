@@ -29,11 +29,11 @@
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Willkommen im Fluesterwald, Fino. Ein weicher Nebel liegt auf den ersten Zeichen, aber wir gehen langsam los."
+          "text": "Willkommen im Fluesterwald, Fino. Der Nebelschatten hat die ersten Zeichen am Eingang verschleiert."
         },
         {
           "speakerId": "ova",
-          "text": "Wenn du den ersten Buchstaben erkennst, findet der Eingang sein warmes Licht wieder."
+          "text": "Unter dem Nebel wartet das Licht der Wissenskristalle. Wenn du den ersten Buchstaben erkennst, findet der Eingang sein warmes Licht wieder."
         }
       ]
     },
@@ -43,11 +43,11 @@
       "lines": [
         {
           "speakerId": "ova",
-          "text": "Hier liegen kleine Zahlensteine. Zaehle sie in Ruhe, dann wird aus dem Nebel ein sicherer Pfad."
+          "text": "Hier liegen kleine Zahlensteine, und zwischen ihnen pulsiert ein Wissenskristall im Nebel."
         },
         {
           "speakerId": "ova",
-          "text": "Heute reichen die kleinen Zahlen bis zehn. Jeder richtige Schritt macht den Weg klarer."
+          "text": "Zaehle die Punkte genau. Jeder richtige Schritt macht den Pfad klarer und laesst den Kristall heller leuchten."
         }
       ]
     },

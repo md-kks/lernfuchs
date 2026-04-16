@@ -1,7 +1,5 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../game/quest/quest_definition.dart';
-import '../../shared/constants/app_text_styles.dart';
 
 class QuestRewardOverlay extends StatefulWidget {
   final List<QuestRewardDefinition> rewards;
@@ -41,7 +39,7 @@ class _QuestRewardOverlayState extends State<QuestRewardOverlay>
     return GestureDetector(
       onTap: widget.onDismiss,
       child: Container(
-        color: Colors.black.withOpacity(0.85),
+        color: Colors.black.withValues(alpha: 0.85),
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
@@ -110,7 +108,7 @@ class _RewardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 140,
+      width: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF3E2108),
@@ -118,7 +116,7 @@ class _RewardCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFF8F00), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -138,9 +136,36 @@ class _RewardCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0x33FF8F00), height: 16),
+          Text(
+            'Effekt:',
+            style: TextStyle(
+              color: const Color(0xFFFFD700).withValues(alpha: 0.8),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _effectText(reward),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
         ],
       ),
     );
+  }
+
+  String _effectText(QuestRewardDefinition reward) {
+    if (reward.unlockUpgradeId != null) {
+      return 'Verziert dein Baumhaus';
+    }
+    if (reward.id == 'sternensamen') {
+      return 'Zum Ausbau deines Hauses';
+    }
+    return 'Ein Geschenk des Waldes';
   }
 }
 
@@ -160,10 +185,7 @@ class _RewardIcon extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
       ),
       child: Center(
-        child: Text(
-          _emojiForType(type),
-          style: const TextStyle(fontSize: 32),
-        ),
+        child: Text(_emojiForType(type), style: const TextStyle(fontSize: 32)),
       ),
     );
   }

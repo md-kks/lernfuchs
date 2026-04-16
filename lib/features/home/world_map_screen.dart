@@ -118,7 +118,7 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen> {
 
   void _handleQuestNodeTapped(WorldQuestNode questNode) {
     if (_finoIsMoving) return;
-    if (questNode.order != _highestUnlockedOrder) return;
+    if (questNode.order > _highestUnlockedOrder) return;
     if (_ovaMessageNodeId == questNode.id) {
       _startQuestFlow(questNode);
       return;

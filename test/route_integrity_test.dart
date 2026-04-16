@@ -6,6 +6,9 @@ void main() {
   test('app shell routes preserve dashboard-first navigation', () {
     final paths = _flattenRoutes(appRouter.configuration.routes).toSet();
 
+    expect(paths, contains('/onboarding/child'));
+    expect(paths, contains('/onboarding/placement'));
+    expect(paths, contains('/onboarding/parent'));
     expect(paths, contains('/home'));
     expect(paths, contains('/home/freies-ueben'));
     expect(paths, contains('/home/baumhaus'));
@@ -15,6 +18,16 @@ void main() {
     expect(paths, contains('/home/subject/:grade/:subject'));
     expect(paths, contains('/home/subject/:grade/:subject/exercise/:topic'));
     expect(paths, contains('/parent'));
+  });
+
+  test('app starts dashboard-first without mandatory onboarding redirect', () {
+    final routes = appRouter.configuration.routes.whereType<GoRoute>();
+    final onboardingRoute = routes.firstWhere(
+      (route) => route.path == '/onboarding',
+    );
+
+    expect(appRouter.routeInformationProvider.value.uri.path, '/home');
+    expect(onboardingRoute.redirect, isNotNull);
   });
 }
 

@@ -142,11 +142,12 @@ Expeditionen erscheinen nach Weltabschluss und Cooldown als Campfire-Knoten auf 
 
 Datei: `lib/features/home/home_screen.dart`.
 
-Der HomeScreen ist der Einstieg nach Onboarding/Placement:
+Der HomeScreen ist der verpflichtende Einstieg der App:
 
 - Tagesaufgaben-Einladung, solange die Tagesaufgabe nicht erledigt ist
 - `Baumhaus`-Button
 - Kartenbutton
+- `Mehr`-Menü mit optionalem Abenteuer-Intro und Einstufung
 - Expeditionshinweis
 - Streak-Anzeige
 
@@ -167,10 +168,10 @@ Dateien:
 
 Startup-Routing:
 
-1. Wenn `placement_completed == false`: Parent-Onboarding
-2. Child-Onboarding
-3. Placement
-4. HomeScreen
+1. App-Start landet immer auf `/home`.
+2. `/onboarding/child` bleibt als optionales Abenteuer-Intro erreichbar.
+3. `/onboarding/placement` bleibt als optionaler Einstufungstest erreichbar.
+4. `/onboarding/parent` bleibt als optionale Eltern-PIN-Einrichtung erreichbar.
 
 Placement initialisiert Kompetenzwerte in SharedPreferences unter `child_elo_<competencyId>` und speichert zusätzlich `placement_elo_results`.
 

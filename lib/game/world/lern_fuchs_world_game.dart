@@ -45,7 +45,7 @@ class LernFuchsWorldGame extends FlameGame {
       label: 'Waldeingang',
       questId: 'chapter1_ovas_ruf',
       storyText:
-          'Ova ruft Fino in den Flüsterwald. Erste Buchstaben machen den Eingang klar.',
+          'Der Nebelschatten verschleiert den Eingang. Erste Buchstaben machen den Weg wieder klar.',
       order: 0,
       subtitle: 'Kapitel 1: Ovas Ruf',
     ),
@@ -57,7 +57,7 @@ class LernFuchsWorldGame extends FlameGame {
       label: 'Zahlenpfad',
       questId: 'chapter1_zahlenpfad',
       storyText:
-          'Kleine Zahlensteine liegen im Nebel. Zähle sie, damit der Pfad sicher wird.',
+          'Ein Wissenskristall pulsiert im Nebel. Zähle die kleinen Zahlensteine, damit der Pfad sicher wird.',
       order: 1,
       subtitle: 'Kapitel 1: Zahlen bis 10',
     ),

@@ -5,7 +5,7 @@
     {
       "id": "chapter1_ovas_ruf",
       "title": "Ovas Ruf",
-      "description": "Ova begruesst Fino im Fluesterwald. Erste Buchstaben machen den Eingang wieder klar.",
+      "description": "Ova begruesst Fino im Fluesterwald. Der Nebelschatten hat die ersten Zeichen verschleiert.",
       "worldNodeId": "waldeingang",
       "unlockCondition": {
         "completedQuestIds": [],
@@ -29,7 +29,7 @@
             "topic": "buchstaben",
             "difficulty": 1,
             "count": 1,
-            "successText": "Der Eingang leuchtet warm. Fino erkennt den ersten Pfad.",
+            "successText": "Der Eingang leuchtet warm. Unter dem Nebel wird der erste Wissenskristall sichtbar.",
             "retryText": "Ova sagt: Schau in Ruhe auf den Anfang des Wortes."
           }
         },
@@ -61,7 +61,7 @@
     {
       "id": "chapter1_zahlenpfad",
       "title": "Der Zahlenpfad",
-      "description": "Kleine Zahlensteine zeigen Fino den naechsten sicheren Schritt.",
+      "description": "Kleine Zahlensteine fuehren zu einem Wissenskristall, der im Nebel gefangen ist.",
       "worldNodeId": "bruecke",
       "unlockCondition": {
         "completedQuestIds": ["chapter1_ovas_ruf"],
@@ -85,7 +85,7 @@
             "topic": "zahlen_bis_10",
             "difficulty": 1,
             "count": 1,
-            "successText": "Die Zahlensteine liegen klar vor Fino.",
+            "successText": "Der Wissenskristall strahlt wieder. Die Zahlensteine liegen klar vor Fino.",
             "retryText": "Ova sagt: Zaehle langsam, ein Stein nach dem anderen."
           }
         },

@@ -28,4 +28,50 @@ const baumhausLeafCanopyUpgrade = BaumhausUpgrade(
   unlockedLabel: 'Ein frisches Blätterdach wächst über dem Baumhaus.',
 );
 
-const baumhausUpgrades = [baumhausLeafCanopyUpgrade];
+const baumhausLaterneUpgrade = BaumhausUpgrade(
+  id: 'baumhaus_laterne',
+  title: 'Sonnentau-Laterne',
+  description: 'Ein warmes Licht für dunkle Nächte im Flüsterwald.',
+  resourceId: 'sternensamen',
+  resourceAmount: 5,
+  lockedLabel: 'Die Dunkelheit umhüllt das Haus.',
+  unlockedLabel: 'Die Laterne leuchtet hell am Eingang.',
+);
+
+const baumhausBankUpgrade = BaumhausUpgrade(
+  id: 'baumhaus_bank',
+  title: 'Waldgeister-Bank',
+  description: 'Ein gemütlicher Platz zum Ausruhen nach dem Lernen.',
+  resourceId: 'sternensamen',
+  resourceAmount: 3,
+  lockedLabel: 'Kein Platz zum Rasten.',
+  unlockedLabel: 'Eine bequeme Holzbank lädt zum Verweilen ein.',
+);
+
+const baumhausKristallBlauUpgrade = BaumhausUpgrade(
+  id: 'baumhaus_kristall_blau',
+  title: 'Hüter-Kristall',
+  description: 'Ein magischer Kristall, der das Wissen des Hains bewahrt.',
+  resourceId: 'sternensamen',
+  resourceAmount: 3,
+  lockedLabel: 'Die Magie fehlt noch.',
+  unlockedLabel: 'Der blaue Kristall pulsiert voller Energie.',
+);
+
+const baumhausGoldenerSchwanzUpgrade = BaumhausUpgrade(
+  id: 'baumhaus_goldener_schwanz',
+  title: 'Goldener Fuchsschwanz',
+  description: 'Ein Zeichen wahrer Meisterschaft in der Silbenkunde.',
+  resourceId: 'sternensamen',
+  resourceAmount: 2,
+  lockedLabel: 'Dein Schweif ist noch gewöhnlich.',
+  unlockedLabel: 'Dein Schweif leuchtet nun in strahlendem Gold!',
+);
+
+const baumhausUpgrades = [
+  baumhausLeafCanopyUpgrade,
+  baumhausLaterneUpgrade,
+  baumhausBankUpgrade,
+  baumhausKristallBlauUpgrade,
+  baumhausGoldenerSchwanzUpgrade,
+];

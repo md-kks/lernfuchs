@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import '../core/services/storage_service.dart';
 import '../features/baumhaus/baumhaus_screen.dart';
 import '../features/home/daily_path_screen.dart';
 import '../features/home/free_practice_screen.dart';
@@ -18,10 +17,10 @@ import '../features/parent/parent_dashboard_screen.dart';
 
 /// Zentraler App-Router (go_router).
 ///
-/// ### Onboarding-Redirect
-/// Solange `placement_completed` `false` ist, leitet der `redirect`-
-/// Callback jeden Navigationsversuch automatisch nach `/onboarding/parent` um.
-/// Ist die Einstufung abgeschlossen, wird `null` zurückgegeben (kein Redirect).
+/// ### Startfluss
+/// Die App startet dashboard-first immer direkt auf `/home`. Onboarding,
+/// Abenteuer-Intro, Eltern-PIN-Vergabe und Placement bleiben als manuell
+/// erreichbare Routen erhalten, blockieren den App-Start aber nicht.
 ///
 /// ### Routen-Übersicht
 /// | Pfad                                           | Screen                     |
@@ -43,20 +42,8 @@ import '../features/parent/parent_dashboard_screen.dart';
 /// | `/worksheet/:grade/:subject/:topic`            | [WorksheetScreen]          |
 final appRouter = GoRouter(
   initialLocation: '/home',
-  redirect: (context, state) {
-    final placementDone = StorageService.instance.placementCompleted;
-    final going = state.matchedLocation;
-    final inOnboarding = going.startsWith('/onboarding');
-    if (!placementDone && !inOnboarding) {
-      return '/onboarding/parent';
-    }
-    if (placementDone && inOnboarding) {
-      return '/home';
-    }
-    return null;
-  },
   routes: [
-    GoRoute(path: '/onboarding', redirect: (_, _) => '/onboarding/parent'),
+    GoRoute(path: '/onboarding', redirect: (_, _) => '/onboarding/child'),
     GoRoute(
       path: '/onboarding/parent',
       builder: (_, _) => const ParentOnboardingScreen(),

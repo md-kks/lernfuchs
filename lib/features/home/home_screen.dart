@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/feature_flags.dart';
 import '../../core/services/providers.dart';
@@ -169,6 +170,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     Positioned(
                       top: 16,
+                      left: 16,
+                      child: _MoreHomeMenuButton(
+                        onIntro: () => context.push('/onboarding/child'),
+                        onPlacement: () =>
+                            context.push('/onboarding/placement'),
+                      ),
+                    ),
+                    Positioned(
+                      top: 16,
                       right: 16,
                       child: _BaumhausButton(
                         onTap: () => Navigator.push(
@@ -240,6 +250,69 @@ class _GoldenSparklePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GoldenSparklePainter oldDelegate) =>
       oldDelegate.t != t;
+}
+
+enum _MoreHomeAction { intro, placement }
+
+class _MoreHomeMenuButton extends StatelessWidget {
+  final VoidCallback onIntro;
+  final VoidCallback onPlacement;
+
+  const _MoreHomeMenuButton({required this.onIntro, required this.onPlacement});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_MoreHomeAction>(
+      tooltip: 'Weitere Aktionen',
+      color: const Color(0xFF3E2108),
+      position: PopupMenuPosition.under,
+      onSelected: (action) {
+        switch (action) {
+          case _MoreHomeAction.intro:
+            onIntro();
+            break;
+          case _MoreHomeAction.placement:
+            onPlacement();
+            break;
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: _MoreHomeAction.intro,
+          child: Text(
+            'Abenteuer-Intro',
+            style: TextStyle(color: Color(0xFFE8D5B0)),
+          ),
+        ),
+        PopupMenuItem(
+          value: _MoreHomeAction.placement,
+          child: Text(
+            'Einstufung starten',
+            style: TextStyle(color: Color(0xFFE8D5B0)),
+          ),
+        ),
+      ],
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0x993E2108),
+            border: Border.all(color: const Color(0x99FF8F00), width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'Mehr',
+            style: TextStyle(
+              color: Color(0xFFE8D5B0),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _BaumhausButton extends StatelessWidget {
