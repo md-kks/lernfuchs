@@ -82,8 +82,22 @@ contain either a list of quests or an object with a `quests` list.
   `QuestStatus.grantedRewardIds` enthalten ist.
 - Quests im Vertical Slice vergeben `sternensamen` und schalten Baumhaus-Upgrades
   wie die `baumhaus_laterne` frei.
-- Flutter rendert Quest-Overlays und UI-Formulare. Flame emittiert lediglich
-  Quest-Node-Tap-Callbacks von der Weltkarte.
+- Flutter bleibt fuer App-Rahmen, Navigation, Menues, Elternbereich,
+  Einstellungen und allgemeine Overlay-UI zustaendig.
+- Flame ist die Zielschicht fuer Weltkarten, Quest-Szenen und direkte
+  Lerninteraktionen in der Spielwelt. Das bisherige Formularmuster bleibt nur
+  Fallback fuer freie Uebungen, nicht migrierte Topics und Uebergangsphasen.
+- World-Quest-Aufgaben werden aus `TaskModel` fachlich erzeugt und ueber
+  `WorldTaskSceneDefinition` szenisch beschrieben. `WorldTaskSceneController`
+  uebersetzt direkte Szenenaktionen wieder in die fachliche Antwort. Die
+  Learning Engine behaelt Erzeugung, Bewertung, Elo/Lernfortschritt und
+  Reward-Anschluss.
+- Aktuell produktiv migriert sind `zahlen_bis_10`, `anlaute` und
+  `zahlenmauern`. Weitere Topics bleiben im Fallback, bis sie explizit ueber
+  `WorldQuestInteractionResolver` und eine passende Szeneninteraktion
+  angeschlossen werden. In World-Quests kann dieser Fallback auch aus den
+  bestehenden `ForestQuestOverlay`-Darstellungen bestehen; freie Uebungen
+  nutzen weiter die Exercise-/Answer-Widgets.
 
 ## Challenge Overlay Modes
 

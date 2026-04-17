@@ -128,8 +128,7 @@ class LernFuchsWorldGame extends FlameGame {
       type: QuestNodeType.lake,
       label: 'Klangwegweiser',
       questId: 'chapter2_wegweiser_aus_klang',
-      storyText:
-          'Die Wegweiser summen Reime und zeigen fehlende Buchstaben.',
+      storyText: 'Die Wegweiser summen Reime und zeigen fehlende Buchstaben.',
       order: 7,
       subtitle: 'Kapitel 2: Reime und Lückenwörter',
     ),
@@ -277,7 +276,10 @@ class LernFuchsWorldGame extends FlameGame {
     final screen = Size(size.x, size.y);
     _fino?.moveToMapPoint(
       WorldMapBackground.edgePointToVector(screen, _finoEdgeIndex, eased),
-      hopOffset: math.sin(_finoAnimT * math.pi * 8) * 2 * WorldMapBackground.uniformScale(size),
+      hopOffset:
+          math.sin(_finoAnimT * math.pi * 8) *
+          2 *
+          WorldMapBackground.uniformScale(size),
     );
 
     if (_finoAnimT >= 1.0) {

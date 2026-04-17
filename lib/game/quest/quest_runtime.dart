@@ -43,7 +43,15 @@ class QuestRuntime {
 
   Future<QuestStatus> startQuest(String questId) async {
     final status = statusFor(questId);
-    if (status.state == QuestRunState.completed) return status;
+    if (status.state == QuestRunState.completed) {
+      final replayStepIndex = _firstLearningChallengeStepIndex(questId);
+      final replay = status.copyWith(
+        state: QuestRunState.inProgress,
+        currentStepIndex: replayStepIndex,
+      );
+      await _saveStatus(replay);
+      return replay;
+    }
     final next = status.copyWith(state: QuestRunState.inProgress);
     await _saveStatus(next);
     return next;
@@ -121,11 +129,14 @@ class QuestRuntime {
     return result;
   }
 
-  Future<({QuestStatus status, List<QuestRewardDefinition> rewards})> completeCurrentStep(String questId) async {
+  Future<({QuestStatus status, List<QuestRewardDefinition> rewards})>
+  completeCurrentStep(String questId) async {
     final quest = _quest(questId);
     final status = statusFor(questId);
     final step = currentStep(questId);
-    if (step == null) return (status: status, rewards: <QuestRewardDefinition>[]);
+    if (step == null) {
+      return (status: status, rewards: <QuestRewardDefinition>[]);
+    }
 
     final rewardsToGrant = <QuestRewardDefinition>[];
     var next = _applyStep(status, step, rewardsToGrant);
@@ -193,5 +204,13 @@ class QuestRuntime {
     final quest = _questsById[questId];
     if (quest == null) throw StateError('Unknown quest: $questId');
     return quest;
+  }
+
+  int _firstLearningChallengeStepIndex(String questId) {
+    final quest = _quest(questId);
+    final index = quest.steps.indexWhere(
+      (step) => step.type == QuestStepType.learningChallenge,
+    );
+    return index == -1 ? 0 : index;
   }
 }

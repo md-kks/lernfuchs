@@ -5,6 +5,7 @@ import 'package:lernfuchs/core/learning/learning.dart';
 import 'package:lernfuchs/core/models/progress.dart';
 import 'package:lernfuchs/core/models/subject.dart';
 import 'package:lernfuchs/core/models/task_model.dart';
+import 'package:lernfuchs/game/quest/quest_definition.dart';
 import 'package:lernfuchs/game/quest/quest_definition_loader.dart';
 import 'package:lernfuchs/game/quest/quest_runtime.dart';
 import 'package:lernfuchs/game/quest/quest_status.dart';
@@ -127,6 +128,47 @@ quests:
     final inventory = await const InventoryStore().loadForProfile('profile_1');
     expect(inventory.collectibleAmount('sternensamen'), 3);
     expect(inventory.hasUpgrade('leaf_canopy'), isTrue);
+  });
+
+  test('replaying a completed quest starts at the learning step', () async {
+    SharedPreferences.setMockInitialValues({});
+    final loader = QuestDefinitionLoader(
+      assetBundle: _StringAssetBundle({'quests.json': _sampleQuestContent}),
+    );
+    final quests = await loader.loadFromAsset('quests.json');
+    final runtime = QuestRuntime(
+      profileId: 'profile_replay',
+      learningEngine: _FakeLearningEngine(),
+      statusStore: const QuestStatusStore(),
+      quests: quests,
+    );
+    await runtime.load();
+    await runtime.startQuest('zahlenwald_start');
+    await runtime.completeCurrentStep('zahlenwald_start');
+    final task = runtime.createLearningTask('zahlenwald_start');
+
+    await runtime.submitLearningAnswer(
+      questId: 'zahlenwald_start',
+      task: task,
+      answer: '5',
+    );
+
+    expect(
+      runtime.statusFor('zahlenwald_start').state,
+      QuestRunState.completed,
+    );
+    expect(runtime.currentStep('zahlenwald_start'), isNull);
+
+    final replay = await runtime.startQuest('zahlenwald_start');
+
+    expect(replay.state, QuestRunState.inProgress);
+    expect(runtime.currentStep('zahlenwald_start')?.id, 'challenge');
+    expect(
+      runtime.currentStep('zahlenwald_start')?.type,
+      QuestStepType.learningChallenge,
+    );
+    expect(replay.grantedRewardIds, contains('sternensamen'));
+    expect(replay.worldState['zahlenwald_clearing_open'], isTrue);
   });
 }
 

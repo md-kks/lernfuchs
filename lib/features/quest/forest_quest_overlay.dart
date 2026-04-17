@@ -10,6 +10,7 @@ import '../../core/services/providers.dart';
 import '../../game/dialogue/hint_definition.dart';
 import '../../game/quest/quest_definition.dart';
 import '../../game/quest/quest_runtime.dart';
+import '../../game/quest/world_quest_interaction.dart';
 import '../../game/world/world_quest_node.dart';
 import '../../models/station_dialogue.dart';
 import '../../services/fino_evolution_service.dart';
@@ -63,6 +64,11 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
   bool _submitting = false;
   bool _inputEnabled = true;
   String? _activeSceneEvent;
+  String? _draggingWorldItemId;
+  Offset? _draggingWorldPosition;
+  final Set<String> _placedWorldItemIds = {};
+  final WorldQuestInteractionResolver _interactionResolver =
+      const WorldQuestInteractionResolver();
 
   TaskModel? get _currentTask =>
       _tasks.isEmpty || _currentIndex >= _tasks.length
@@ -158,6 +164,21 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
     final task = _currentTask;
     if (task == null) return;
     final kind = _exerciseKind(task);
+    final sceneDefinition = _sceneDefinition(task);
+    final interactionSpec = sceneDefinition?.toInteractionSpec();
+    if (sceneDefinition?.migrated == true &&
+        sceneDefinition?.interactionType ==
+            WorldQuestInteractionType.tapSelect &&
+        _handleWorldTap(position, size, sceneDefinition!)) {
+      return;
+    }
+    if (sceneDefinition?.migrated == true &&
+        sceneDefinition?.interactionType !=
+            WorldQuestInteractionType.tapSelect &&
+        sceneDefinition?.interactionType !=
+            WorldQuestInteractionType.traceDraw) {
+      return;
+    }
 
     if (layout.brummTapRect.contains(position) &&
         kind == _ForestExerciseKind.syllable) {
@@ -170,25 +191,34 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
       return;
     }
 
-    for (final entry in layout.numberStones(_numberChoices(task)).entries) {
-      if ((position - entry.value).distance <= layout.numberStoneRadius) {
-        setState(() {
-          _currentAnswer = entry.key;
-          if (kind == _ForestExerciseKind.syllable) {
-            _syllableCount = entry.key;
-          }
-          _lastCorrect = null;
-        });
-        _checkAndSubmit(entry.key);
-        return;
+    if (!forestQuestNumberTaskUsesTextChoices(task)) {
+      for (final entry in layout.numberStones(_numberChoices(task)).entries) {
+        if ((position - entry.value).distance <= layout.numberStoneRadius) {
+          setState(() {
+            _currentAnswer = entry.key;
+            if (kind == _ForestExerciseKind.syllable) {
+              _syllableCount = entry.key;
+            }
+            _lastCorrect = null;
+          });
+          _checkAndSubmit(entry.key);
+          return;
+        }
       }
     }
 
-    final answerRects = kind == _ForestExerciseKind.multipleChoice
-        ? layout.runeStones(_answerChoices(task))
-        : kind == _ForestExerciseKind.pattern
-        ? layout.patternTiles(_answerChoices(task))
-        : layout.answerStones(_answerChoices(task));
+    final Map<dynamic, Rect> answerRects;
+    if (kind == _ForestExerciseKind.pattern) {
+      answerRects = layout.patternTiles(_answerChoices(task));
+    } else if (kind == _ForestExerciseKind.number &&
+        forestQuestNumberTaskUsesTextChoices(task)) {
+      answerRects = layout.answerStones(forestQuestNumberTextChoices(task));
+    } else if (kind == _ForestExerciseKind.multipleChoice &&
+        interactionSpec?.sceneRole != 'rhyme_objects') {
+      answerRects = layout.runeStones(_answerChoices(task));
+    } else {
+      answerRects = layout.answerStones(_answerChoices(task));
+    }
     for (final entry in answerRects.entries) {
       if (entry.value.contains(position)) {
         if (kind == _ForestExerciseKind.pattern &&
@@ -219,6 +249,143 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
         layout.handwritingConfirmRect.contains(position)) {
       _checkAndSubmit(_currentAnswer);
     }
+  }
+
+  bool _handleWorldTap(
+    Offset position,
+    Size size,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final accessibility = ref.read(accessibilityProvider).settings;
+    final layout = _ForestQuestLayout(
+      size,
+      widget.bottomInset,
+      _hintText(_currentTask),
+      accessibility.motorMode,
+    );
+    final controller = WorldTaskSceneController(scene);
+    for (final entry in layout.worldItemRects(scene).entries) {
+      if (!entry.value.contains(position)) continue;
+      final answer = controller.submitTap(entry.key);
+      if (answer == null) return true;
+      setState(() {
+        _currentAnswer = answer;
+        _lastCorrect = null;
+      });
+      _checkAndSubmit(answer);
+      return true;
+    }
+    return false;
+  }
+
+  void _handlePanStart(Offset position, Size size) {
+    if (_submitting || !_inputEnabled) return;
+    final task = _currentTask;
+    final scene = _sceneDefinition(task);
+    if (scene == null ||
+        !scene.migrated ||
+        scene.interactionType == WorldQuestInteractionType.tapSelect ||
+        scene.interactionType == WorldQuestInteractionType.traceDraw) {
+      return;
+    }
+    final accessibility = ref.read(accessibilityProvider).settings;
+    final layout = _ForestQuestLayout(
+      size,
+      widget.bottomInset,
+      _hintText(task),
+      accessibility.motorMode,
+    );
+    final itemRects = layout.worldItemRects(scene);
+    for (final entry in itemRects.entries.toList().reversed) {
+      if (_placedWorldItemIds.contains(entry.key)) continue;
+      if (entry.value.contains(position)) {
+        setState(() {
+          _draggingWorldItemId = entry.key;
+          _draggingWorldPosition = position;
+          _lastCorrect = null;
+        });
+        return;
+      }
+    }
+  }
+
+  void _handlePanUpdate(Offset position) {
+    if (_draggingWorldItemId == null) return;
+    setState(() => _draggingWorldPosition = position);
+  }
+
+  void _handlePanEnd(Size size) {
+    final task = _currentTask;
+    final scene = _sceneDefinition(task);
+    final itemId = _draggingWorldItemId;
+    final position = _draggingWorldPosition;
+    if (task == null || scene == null || itemId == null || position == null) {
+      setState(() {
+        _draggingWorldItemId = null;
+        _draggingWorldPosition = null;
+      });
+      return;
+    }
+    final accessibility = ref.read(accessibilityProvider).settings;
+    final layout = _ForestQuestLayout(
+      size,
+      widget.bottomInset,
+      _hintText(task),
+      accessibility.motorMode,
+    );
+    final targetEntry = layout
+        .worldTargetRects(scene)
+        .entries
+        .where((entry) => entry.value.contains(position));
+    if (targetEntry.isEmpty) {
+      setState(() {
+        _draggingWorldItemId = null;
+        _draggingWorldPosition = null;
+      });
+      return;
+    }
+
+    final controller = WorldTaskSceneController(scene);
+    final answer =
+        scene.interactionType == WorldQuestInteractionType.sequenceBuild
+        ? controller.submitSequencePlacement(
+            itemId: itemId,
+            targetId: targetEntry.first.key,
+          )
+        : controller.submitDragToTarget(
+            itemId: itemId,
+            targetId: targetEntry.first.key,
+          );
+    if (answer == null) {
+      setState(() {
+        _draggingWorldItemId = null;
+        _draggingWorldPosition = null;
+      });
+      return;
+    }
+
+    if (scene.sceneRole == 'apple_baskets') {
+      final placedCount = _placedWorldItemIds.length + 1;
+      setState(() {
+        _placedWorldItemIds.add(itemId);
+        _draggingWorldItemId = null;
+        _draggingWorldPosition = null;
+        _currentAnswer = placedCount;
+        _lastCorrect = null;
+      });
+      if (placedCount.toString() == task.correctAnswer.toString()) {
+        _checkAndSubmit(placedCount);
+      }
+      return;
+    }
+
+    setState(() {
+      _draggingWorldItemId = null;
+      _draggingWorldPosition = null;
+      _currentAnswer = answer;
+      _lastCorrect = null;
+    });
+    _checkAndSubmit(answer);
   }
 
   bool currentAnswerMatches(dynamic value) =>
@@ -271,6 +438,9 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
       setState(() {
         _currentAnswer = null;
         _syllableCount = 0;
+        _draggingWorldItemId = null;
+        _draggingWorldPosition = null;
+        _placedWorldItemIds.clear();
         _lastCorrect = null;
         _submitting = false;
       });
@@ -286,6 +456,9 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
       _currentIndex = _interleavedNextTaskIndex();
       _currentAnswer = null;
       _syllableCount = 0;
+      _draggingWorldItemId = null;
+      _draggingWorldPosition = null;
+      _placedWorldItemIds.clear();
       _lastCorrect = null;
       _submitting = false;
     });
@@ -306,7 +479,10 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
   }
 
   bool get _canPause =>
-      _inputEnabled && !_submitting && _lastCorrect == null && _currentTask != null;
+      _inputEnabled &&
+      !_submitting &&
+      _lastCorrect == null &&
+      _currentTask != null;
 
   Future<void> _openBreathingPause() async {
     setState(() => _inputEnabled = false);
@@ -343,7 +519,9 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
   Future<void> _speakDialoguePhrase({required bool correct}) async {
     final dialogue = widget.stationDialogue;
     if (dialogue == null) return;
-    final phrases = correct ? dialogue.correctPhrases : dialogue.wrongAnswerPhrases;
+    final phrases = correct
+        ? dialogue.correctPhrases
+        : dialogue.wrongAnswerPhrases;
     if (phrases.isEmpty) return;
     final index = DateTime.now().millisecond % phrases.length;
     await ref.read(ttsServiceProvider).speak(phrases[index]);
@@ -353,7 +531,9 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
     setState(() {
       _inputEnabled = false;
       _submitting = true;
-      _activeSceneEvent = widget.stationDialogue?.milestoneForTask(6)?.sceneEvent;
+      _activeSceneEvent = widget.stationDialogue
+          ?.milestoneForTask(6)
+          ?.sceneEvent;
     });
     ref.read(audioServiceProvider).playMusic('outro');
     ref.read(audioServiceProvider).playSfx('crystal_collect');
@@ -392,12 +572,25 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
     return const [];
   }
 
+  WorldQuestInteractionSpec? _interactionSpec(TaskModel? task) {
+    return _sceneDefinition(task)?.toInteractionSpec();
+  }
+
+  WorldTaskSceneDefinition? _sceneDefinition(TaskModel? task) {
+    if (task == null) return null;
+    return _interactionResolver.resolveScene(task);
+  }
+
   String _hintText(TaskModel? task) {
     if (widget.feedback != null) return widget.feedback!;
     final hint = widget.hintSet?.levels.isEmpty == false
         ? widget.hintSet!.levels.first.text
         : null;
     if (hint != null) return hint;
+    final interactionSpec = _interactionSpec(task);
+    if (interactionSpec?.migrated == true) {
+      return interactionSpec!.prompt;
+    }
     return task == null
         ? 'Ova wartet auf die nächste Spur.'
         : 'Schau genau hin und probiere es in Ruhe.';
@@ -421,13 +614,25 @@ class _ForestQuestOverlayState extends ConsumerState<ForestQuestOverlay>
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: (details) => _handleTap(details.localPosition, size),
+              onPanStart: (details) =>
+                  _handlePanStart(details.localPosition, size),
+              onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
+              onPanEnd: (_) => _handlePanEnd(size),
+              onPanCancel: () => setState(() {
+                _draggingWorldItemId = null;
+                _draggingWorldPosition = null;
+              }),
               child: CustomPaint(
                 size: size,
                 painter: ForestQuestPainter(
                   questNode: widget.questNode,
                   task: task,
+                  sceneDefinition: _sceneDefinition(task),
                   hintText: _hintText(task),
                   currentAnswer: _currentAnswer,
+                  draggingWorldItemId: _draggingWorldItemId,
+                  draggingWorldPosition: _draggingWorldPosition,
+                  placedWorldItemIds: Set<String>.of(_placedWorldItemIds),
                   syllableCount: _syllableCount,
                   lastCorrect: _lastCorrect,
                   brummTapT: _brummTapController.value,
@@ -512,9 +717,64 @@ List<int> _numberChoices(TaskModel task) {
   return sorted;
 }
 
+@visibleForTesting
+bool forestQuestNumberTaskUsesTextChoices(TaskModel task) =>
+    task.topic == 'zahlen_bis_20' && task.correctAnswer is String;
+
+@visibleForTesting
+List<String> forestQuestNumberTextChoices(TaskModel task) {
+  final correct = task.correctAnswer.toString();
+  const numberWords = [
+    'null',
+    'eins',
+    'zwei',
+    'drei',
+    'vier',
+    'fünf',
+    'sechs',
+    'sieben',
+    'acht',
+    'neun',
+    'zehn',
+    'elf',
+    'zwölf',
+    'dreizehn',
+    'vierzehn',
+    'fünfzehn',
+    'sechzehn',
+    'siebzehn',
+    'achtzehn',
+    'neunzehn',
+    'zwanzig',
+  ];
+  final values = <String>{correct};
+  final number = task.metadata['number'] as int?;
+  if (number != null) {
+    for (final delta in const [1, -1, 2, -2, 3, -3]) {
+      final candidate = number + delta;
+      if (candidate >= 0 && candidate < numberWords.length) {
+        values.add(numberWords[candidate]);
+      }
+      if (values.length >= 4) break;
+    }
+  }
+  for (final word in numberWords) {
+    if (values.length >= 4) break;
+    values.add(word);
+  }
+  final result = values.take(4).toList();
+  result.sort((a, b) {
+    final ah = '${task.id}:$a'.hashCode;
+    final bh = '${task.id}:$b'.hashCode;
+    return ah.compareTo(bh);
+  });
+  return result;
+}
+
 List<dynamic> _limitedChoiceOptions(TaskModel task) {
-  final choices = ((task.metadata['choices'] as List?)?.cast<dynamic>() ?? const [])
-      .toList();
+  final choices =
+      ((task.metadata['choices'] as List?)?.cast<dynamic>() ?? const [])
+          .toList();
   if (choices.length <= 4) return choices;
   final selected = <dynamic>[];
   for (final choice in choices) {
@@ -596,13 +856,12 @@ class _ForestQuestLayout {
     size.width - sx(36),
     math.max(110 * scale, sceneBottom - sy(100)),
   );
-  Rect get handwritingConfirmRect =>
-      Rect.fromLTWH(
-        sx(70),
-        safeBottom - 8 * scale - sy(34) * buttonScale,
-        sx(140),
-        sy(26) * buttonScale,
-      );
+  Rect get handwritingConfirmRect => Rect.fromLTWH(
+    sx(70),
+    safeBottom - 8 * scale - sy(34) * buttonScale,
+    sx(140),
+    sy(26) * buttonScale,
+  );
   Rect get patternConfirmRect => Rect.fromCenter(
     center: Offset(sx(240), sceneY(0.88)),
     width: 34 * scale * buttonScale,
@@ -666,21 +925,142 @@ class _ForestQuestLayout {
           math.max(1, visibleChoices.length),
     );
     final height = (motorMode ? 54 : 44) * scale;
-    final total = width * visibleChoices.length + gap * (visibleChoices.length - 1);
+    final total =
+        width * visibleChoices.length + gap * (visibleChoices.length - 1);
     final left = (size.width - total) / 2;
     final top = sceneY(0.80);
     return {
       for (var i = 0; i < visibleChoices.length; i++)
-        visibleChoices[i]: Rect.fromLTWH(left + i * (width + gap), top, width, height),
+        visibleChoices[i]: Rect.fromLTWH(
+          left + i * (width + gap),
+          top,
+          width,
+          height,
+        ),
     };
+  }
+
+  Map<String, Rect> worldTargetRects(WorldTaskSceneDefinition scene) {
+    if (scene.targets.isEmpty) return const {};
+    final target = scene.targets.first;
+    return switch (scene.sceneRole) {
+      'apple_baskets' => {
+        target.id: Rect.fromCenter(
+          center: Offset(sx(140), sceneY(0.58)),
+          width: sx(116),
+          height: sy(54),
+        ),
+      },
+      'letter_signs' => {
+        target.id: Rect.fromCenter(
+          center: Offset(sx(140), sceneY(0.45)),
+          width: sx(118),
+          height: sy(58),
+        ),
+      },
+      'number_wall' => {
+        target.id: Rect.fromLTWH(
+          sx(140) - sx(58) / 2,
+          sceneY(0.44) - sy(34) * 1.15,
+          sx(58),
+          sy(34),
+        ),
+      },
+      _ => const {},
+    };
+  }
+
+  Map<String, Rect> worldItemRects(WorldTaskSceneDefinition scene) {
+    return switch (scene.sceneRole) {
+      'apple_baskets' => _appleItemRects(scene),
+      'letter_signs' => _letterItemRects(scene),
+      'number_wall' => _numberItemRects(scene),
+      'tap_objects' => _tapItemRects(scene),
+      _ => const {},
+    };
+  }
+
+  Map<String, Rect> _appleItemRects(WorldTaskSceneDefinition scene) {
+    final count = scene.items.length;
+    if (count == 0) return const {};
+    final columns = math.min(5, math.max(1, count)).toInt();
+    return {
+      for (var i = 0; i < count; i++)
+        scene.items[i].id: Rect.fromCenter(
+          center: Offset(
+            sx(70 + (i % columns) * 35 + ((i ~/ columns).isOdd ? 16 : 0)),
+            sceneY(0.30 + (i ~/ columns) * 0.08),
+          ),
+          width: 30 * scale * tapScale,
+          height: 30 * scale * tapScale,
+        ),
+    };
+  }
+
+  Map<String, Rect> _letterItemRects(WorldTaskSceneDefinition scene) {
+    final result = <String, Rect>{};
+    final stone = (motorMode ? 58 : 52) * scale;
+    final gapX = (motorMode ? 22 : 18) * scale;
+    final gapY = (motorMode ? 22 : 10) * scale;
+    final totalWidth = stone * 2 + gapX;
+    final left = (size.width - totalWidth) / 2;
+    final top = sceneY(0.72);
+    for (var i = 0; i < scene.items.take(4).length; i++) {
+      final col = i % 2;
+      final row = i ~/ 2;
+      result[scene.items[i].id] = Rect.fromLTWH(
+        left + col * (stone + gapX),
+        top + row * (stone + gapY),
+        stone,
+        stone,
+      );
+    }
+    return result;
+  }
+
+  Map<String, Rect> _numberItemRects(WorldTaskSceneDefinition scene) {
+    final result = <String, Rect>{};
+    final gap = motorMode ? 62.0 : 52.0;
+    final choices = scene.items.take(4).toList();
+    final start = 140 - ((choices.length - 1) * gap / 2);
+    final y = sceneY(0.88);
+    for (var i = 0; i < choices.length; i++) {
+      result[choices[i].id] = Rect.fromCircle(
+        center: Offset(sx(start + i * gap), y),
+        radius: numberStoneRadius,
+      );
+    }
+    return result;
+  }
+
+  Map<String, Rect> _tapItemRects(WorldTaskSceneDefinition scene) {
+    final result = <String, Rect>{};
+    final width = sx(motorMode ? 112 : 102);
+    final height = math.max(34 * scale * buttonScale, sy(36) * buttonScale);
+    final items = scene.items.take(4).toList();
+    for (var i = 0; i < items.length; i++) {
+      final col = i % 2;
+      final row = i ~/ 2;
+      result[items[i].id] = Rect.fromLTWH(
+        sx(35 + col * 114),
+        sceneY(0.74 + row * 0.13),
+        width,
+        height,
+      );
+    }
+    return result;
   }
 }
 
 class ForestQuestPainter extends CustomPainter {
   final WorldQuestNode questNode;
   final TaskModel? task;
+  final WorldTaskSceneDefinition? sceneDefinition;
   final String hintText;
   final dynamic currentAnswer;
+  final String? draggingWorldItemId;
+  final Offset? draggingWorldPosition;
+  final Set<String> placedWorldItemIds;
   final int syllableCount;
   final bool? lastCorrect;
   final double brummTapT;
@@ -701,8 +1081,12 @@ class ForestQuestPainter extends CustomPainter {
   ForestQuestPainter({
     required this.questNode,
     required this.task,
+    this.sceneDefinition,
     required this.hintText,
     required this.currentAnswer,
+    this.draggingWorldItemId,
+    this.draggingWorldPosition,
+    this.placedWorldItemIds = const {},
     required this.syllableCount,
     required this.lastCorrect,
     required this.brummTapT,
@@ -768,8 +1152,16 @@ class ForestQuestPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
       for (var i = 0; i < 8; i++) {
         final p = Offset(l.sx(32 + i * 31), l.sceneY(0.10 + (i % 4) * 0.12));
-        canvas.drawLine(p.translate(-4 * l.scale, 0), p.translate(4 * l.scale, 0), paint);
-        canvas.drawLine(p.translate(0, -4 * l.scale), p.translate(0, 4 * l.scale), paint);
+        canvas.drawLine(
+          p.translate(-4 * l.scale, 0),
+          p.translate(4 * l.scale, 0),
+          paint,
+        );
+        canvas.drawLine(
+          p.translate(0, -4 * l.scale),
+          p.translate(0, 4 * l.scale),
+          paint,
+        );
       }
     }
     if (context.isEvening || context.isNight) {
@@ -879,7 +1271,11 @@ class ForestQuestPainter extends CustomPainter {
 
   void _drawArchGlow(Canvas canvas, _ForestQuestLayout l, double t) {
     final center = Offset(l.sx(140), l.sy(160));
-    canvas.drawCircle(center, 30 * l.scale * t, Paint()..color = Color.fromRGBO(255, 215, 0, 0.3 * t));
+    canvas.drawCircle(
+      center,
+      30 * l.scale * t,
+      Paint()..color = Color.fromRGBO(255, 215, 0, 0.3 * t),
+    );
     canvas.drawPath(
       Path()
         ..moveTo(l.sx(119), l.sy(210))
@@ -889,13 +1285,22 @@ class ForestQuestPainter extends CustomPainter {
     );
   }
 
-  void _drawCrystalGlow(Canvas canvas, _ForestQuestLayout l, String event, double t) {
+  void _drawCrystalGlow(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    String event,
+    double t,
+  ) {
     final center = Offset(l.sx(140), l.sy(150));
     final pulse = event == 'crystal_flicker' && !calmMode
         ? (math.sin(sceneEventT * math.pi * 8).abs())
         : 1.0;
     final radius = (event == 'crystal_full_glow' ? 34 : 20) * l.scale * t;
-    canvas.drawCircle(center, radius, Paint()..color = Color.fromRGBO(41, 182, 246, 0.32 * pulse));
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()..color = Color.fromRGBO(41, 182, 246, 0.32 * pulse),
+    );
     canvas.drawPath(
       Path()
         ..moveTo(center.dx, center.dy - 16 * l.scale)
@@ -903,33 +1308,74 @@ class ForestQuestPainter extends CustomPainter {
         ..lineTo(center.dx, center.dy + 16 * l.scale)
         ..lineTo(center.dx - 10 * l.scale, center.dy)
         ..close(),
-      Paint()..color = const Color(0xFF29B6F6).withValues(alpha: 0.55 + 0.45 * t),
+      Paint()
+        ..color = const Color(0xFF29B6F6).withValues(alpha: 0.55 + 0.45 * t),
     );
   }
 
-  void _drawTreeRuneGlow(Canvas canvas, _ForestQuestLayout l, String event, double t) {
-    final count = event == 'rune_glow_1' ? 1 : event == 'rune_glow_2' ? 3 : 5;
+  void _drawTreeRuneGlow(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    String event,
+    double t,
+  ) {
+    final count = event == 'rune_glow_1'
+        ? 1
+        : event == 'rune_glow_2'
+        ? 3
+        : 5;
     for (var i = 0; i < count; i++) {
       final p = Offset(l.sx(128 + (i % 2) * 22), l.sy(140 + i * 18));
-      canvas.drawCircle(p, 13 * l.scale, Paint()..color = Color.fromRGBO(255, 215, 0, 0.35 * t));
+      canvas.drawCircle(
+        p,
+        13 * l.scale,
+        Paint()..color = Color.fromRGBO(255, 215, 0, 0.35 * t),
+      );
     }
   }
 
-  void _drawGateGlow(Canvas canvas, _ForestQuestLayout l, String event, double t) {
+  void _drawGateGlow(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    String event,
+    double t,
+  ) {
     final shake = event == 'gate_vibrate' && !calmMode
         ? math.sin(sceneEventT * math.pi * 12) * 2 * l.scale
         : 0.0;
     final center = Offset(l.sx(140) + shake, l.sy(188));
     final alpha = event == 'gate_open' ? 0.32 : 0.18;
-    canvas.drawCircle(center, 36 * l.scale * t, Paint()..color = Color.fromRGBO(255, 215, 0, alpha * t));
+    canvas.drawCircle(
+      center,
+      36 * l.scale * t,
+      Paint()..color = Color.fromRGBO(255, 215, 0, alpha * t),
+    );
   }
 
-  void _drawLakeStoneEvent(Canvas canvas, _ForestQuestLayout l, String event, double t) {
-    final count = event == 'stone_appear_1' ? 1 : event == 'stone_appear_2' ? 3 : 4;
+  void _drawLakeStoneEvent(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    String event,
+    double t,
+  ) {
+    final count = event == 'stone_appear_1'
+        ? 1
+        : event == 'stone_appear_2'
+        ? 3
+        : 4;
     for (var i = 0; i < count; i++) {
-      final p = Offset(l.sx(82 + i * 42), l.sy(194 + (i.isEven ? -8 : 8)) + (1 - t) * 18 * l.scale);
-      canvas.drawOval(Rect.fromCenter(center: p, width: l.sx(30), height: l.sy(16)), Paint()..color = const Color(0xFF8D6E63));
-      canvas.drawOval(Rect.fromCenter(center: p, width: l.sx(34), height: l.sy(20)), Paint()..color = Color.fromRGBO(255, 215, 0, 0.12 * t));
+      final p = Offset(
+        l.sx(82 + i * 42),
+        l.sy(194 + (i.isEven ? -8 : 8)) + (1 - t) * 18 * l.scale,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(center: p, width: l.sx(30), height: l.sy(16)),
+        Paint()..color = const Color(0xFF8D6E63),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(center: p, width: l.sx(34), height: l.sy(20)),
+        Paint()..color = Color.fromRGBO(255, 215, 0, 0.12 * t),
+      );
     }
   }
 
@@ -937,7 +1383,10 @@ class ForestQuestPainter extends CustomPainter {
     final t = calmMode ? 1.0 : outroT.clamp(0.0, 1.0);
     final start = Offset(l.sx(140), l.sy(160));
     final end = Offset(l.sx(84), l.sy(214));
-    final control = Offset((start.dx + end.dx) / 2, math.min(start.dy, end.dy) - 40 * l.scale);
+    final control = Offset(
+      (start.dx + end.dx) / 2,
+      math.min(start.dy, end.dy) - 40 * l.scale,
+    );
     final mt = 1 - t;
     final p = Offset(
       mt * mt * start.dx + 2 * mt * t * control.dx + t * t * end.dx,
@@ -955,7 +1404,11 @@ class ForestQuestPainter extends CustomPainter {
     );
     if (t > 0.55) {
       final flashT = math.sin((t - 0.55) / 0.45 * math.pi);
-      canvas.drawCircle(end, 18 * l.scale * flashT, Paint()..color = Colors.white.withValues(alpha: 0.45 * flashT));
+      canvas.drawCircle(
+        end,
+        18 * l.scale * flashT,
+        Paint()..color = Colors.white.withValues(alpha: 0.45 * flashT),
+      );
     }
   }
 
@@ -1316,7 +1769,11 @@ class ForestQuestPainter extends CustomPainter {
     final grain = Paint()
       ..color = const Color(0x06FFAA3C)
       ..strokeWidth = 1;
-    for (var y = l.floorTop + 18 * l.scale; y < l.safeBottom; y += 20 * l.scale) {
+    for (
+      var y = l.floorTop + 18 * l.scale;
+      y < l.safeBottom;
+      y += 20 * l.scale
+    ) {
       canvas.drawLine(
         Offset(0, y),
         Offset(size.width, y + math.sin(y / 30) * 2),
@@ -1330,15 +1787,35 @@ class ForestQuestPainter extends CustomPainter {
     canvas.drawPath(
       Path()
         ..moveTo(0, l.sy(470))
-        ..quadraticBezierTo(l.sx(46), l.floorTop + 22 * l.scale, l.sx(92), l.floorTop + 54 * l.scale)
-        ..quadraticBezierTo(l.sx(62), l.floorTop + 68 * l.scale, l.sx(34), l.safeBottom - 8 * l.scale),
+        ..quadraticBezierTo(
+          l.sx(46),
+          l.floorTop + 22 * l.scale,
+          l.sx(92),
+          l.floorTop + 54 * l.scale,
+        )
+        ..quadraticBezierTo(
+          l.sx(62),
+          l.floorTop + 68 * l.scale,
+          l.sx(34),
+          l.safeBottom - 8 * l.scale,
+        ),
       root,
     );
     canvas.drawPath(
       Path()
         ..moveTo(size.width, l.floorTop + 62 * l.scale)
-        ..quadraticBezierTo(l.sx(230), l.floorTop + 26 * l.scale, l.sx(188), l.floorTop + 58 * l.scale)
-        ..quadraticBezierTo(l.sx(224), l.floorTop + 74 * l.scale, l.sx(252), l.safeBottom - 12 * l.scale),
+        ..quadraticBezierTo(
+          l.sx(230),
+          l.floorTop + 26 * l.scale,
+          l.sx(188),
+          l.floorTop + 58 * l.scale,
+        )
+        ..quadraticBezierTo(
+          l.sx(224),
+          l.floorTop + 74 * l.scale,
+          l.sx(252),
+          l.safeBottom - 12 * l.scale,
+        ),
       root,
     );
     _drawMushroom(canvas, l, Offset(l.sx(22), l.safeBottom - 12 * l.scale));
@@ -1453,6 +1930,11 @@ class ForestQuestPainter extends CustomPainter {
   void _drawExerciseArea(Canvas canvas, Size size) {
     final task = this.task;
     if (task == null) return;
+    final scene = sceneDefinition;
+    if (scene?.migrated == true) {
+      _drawWorldInteractionExercise(canvas, size, task, scene!);
+      return;
+    }
     switch (_exerciseKind(task)) {
       case _ForestExerciseKind.syllable:
         _drawSyllableExercise(canvas, size, task);
@@ -1467,6 +1949,372 @@ class ForestQuestPainter extends CustomPainter {
       case _ForestExerciseKind.number:
         _drawNumberExercise(canvas, size, task);
     }
+  }
+
+  void _drawWorldInteractionExercise(
+    Canvas canvas,
+    Size size,
+    TaskModel task,
+    WorldTaskSceneDefinition scene,
+  ) {
+    switch (scene.sceneRole) {
+      case 'apple_baskets':
+        _drawAppleBasketExercise(canvas, size, task, scene);
+      case 'letter_signs':
+        _drawLetterSignsExercise(canvas, size, task, scene);
+      case 'number_wall':
+        _drawNumberWallExercise(canvas, size, task, scene);
+      case 'tap_objects':
+        _drawTapObjectsExercise(canvas, size, scene);
+      default:
+        _drawFallbackExercise(canvas, size, task);
+    }
+  }
+
+  void _drawFallbackExercise(Canvas canvas, Size size, TaskModel task) {
+    switch (_exerciseKind(task)) {
+      case _ForestExerciseKind.syllable:
+        _drawSyllableExercise(canvas, size, task);
+      case _ForestExerciseKind.dotCount:
+        _drawDotCountExercise(canvas, size, task);
+      case _ForestExerciseKind.multipleChoice:
+        _drawChoiceExercise(canvas, size, task);
+      case _ForestExerciseKind.pattern:
+        _drawPatternExercise(canvas, size, task);
+      case _ForestExerciseKind.handwriting:
+        _drawHandwritingExercise(canvas, size);
+      case _ForestExerciseKind.number:
+        _drawNumberExercise(canvas, size, task);
+    }
+  }
+
+  void _drawAppleBasketExercise(
+    Canvas canvas,
+    Size size,
+    TaskModel task,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
+    final itemRects = l.worldItemRects(scene);
+    final targetRects = l.worldTargetRects(scene);
+    final basket = targetRects.values.first;
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: basket.center.translate(0, basket.height * 0.34),
+        width: basket.width * 1.12,
+        height: basket.height * 0.42,
+      ),
+      Paint()..color = const Color(0x66000000),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(basket, Radius.circular(8 * l.scale)),
+      Paint()..color = const Color(0xFF6D3B17),
+    );
+    canvas.drawArc(
+      basket.inflate(l.sx(8)).translate(0, -l.sy(16)),
+      math.pi,
+      math.pi,
+      false,
+      Paint()
+        ..color = const Color(0xFF3E2108)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4 * l.scale,
+    );
+    _drawText(
+      canvas,
+      'Korb ${scene.targets.isEmpty ? '' : scene.targets.first.label}',
+      Offset(basket.left, basket.top + l.sy(18)),
+      basket.width,
+      const Color(0xFFE8D5B0),
+      12 * l.scale,
+      FontWeight.w800,
+      align: TextAlign.center,
+    );
+    for (final entry in itemRects.entries) {
+      if (placedWorldItemIds.contains(entry.key) ||
+          draggingWorldItemId == entry.key) {
+        continue;
+      }
+      _drawApple(canvas, entry.value.center, l.scale);
+    }
+    final placed = placedWorldItemIds.length;
+    if (placed > 0) {
+      _drawText(
+        canvas,
+        '$placed',
+        Offset(basket.left, basket.top - l.sy(22)),
+        basket.width,
+        const Color(0xFFFFF9C4),
+        18 * l.scale,
+        FontWeight.w900,
+        align: TextAlign.center,
+      );
+    }
+    _drawDraggedWorldItem(canvas, l, scene);
+  }
+
+  void _drawLetterSignsExercise(
+    Canvas canvas,
+    Size size,
+    TaskModel task,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
+    final sign = l.worldTargetRects(scene).values.first;
+    canvas.drawRect(
+      Rect.fromLTWH(sign.center.dx - l.sx(4), sign.bottom, l.sx(8), l.sy(42)),
+      Paint()..color = const Color(0xFF3E2108),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(sign, Radius.circular(8 * l.scale)),
+      Paint()..color = const Color(0xFF5D4037),
+    );
+    final emoji = task.metadata['emoji']?.toString();
+    final word = scene.targets.isNotEmpty ? scene.targets.first.label : '';
+    _drawText(
+      canvas,
+      emoji == null ? word : '$emoji  $word',
+      Offset(sign.left + l.sx(7), sign.top + l.sy(18)),
+      sign.width - l.sx(14),
+      const Color(0xFFFFD700),
+      16 * l.scale,
+      FontWeight.w900,
+      align: TextAlign.center,
+      maxLines: 1,
+    );
+    _drawWorldLetterStones(canvas, l, scene);
+    _drawDraggedWorldItem(canvas, l, scene);
+  }
+
+  void _drawNumberWallExercise(
+    Canvas canvas,
+    Size size,
+    TaskModel task,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
+    final center = Offset(l.sx(140), l.sceneY(0.44));
+    final stoneW = l.sx(58);
+    final stoneH = l.sy(34);
+    final rows = [
+      [Offset(center.dx - stoneW / 2, center.dy - stoneH * 1.15)],
+      [
+        Offset(center.dx - stoneW * 1.05, center.dy),
+        Offset(center.dx + stoneW * 0.05, center.dy),
+      ],
+      [
+        Offset(center.dx - stoneW * 1.6, center.dy + stoneH * 1.15),
+        Offset(center.dx - stoneW * 0.5, center.dy + stoneH * 1.15),
+        Offset(center.dx + stoneW * 0.6, center.dy + stoneH * 1.15),
+      ],
+    ];
+    var index = 0;
+    for (final row in rows) {
+      for (final p in row) {
+        final isTarget = index == 0;
+        final r = Rect.fromLTWH(p.dx, p.dy, stoneW, stoneH);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(r, Radius.circular(7 * l.scale)),
+          Paint()
+            ..color = isTarget
+                ? const Color(0xFF1E0D00)
+                : const Color(0xFF5D4037),
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            r.deflate(3 * l.scale),
+            Radius.circular(5 * l.scale),
+          ),
+          Paint()
+            ..color = isTarget
+                ? const Color(0xFFFF8F00)
+                : const Color(0xFF8D6E63)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2 * l.scale,
+        );
+        _drawText(
+          canvas,
+          isTarget ? '?' : ' ',
+          Offset(r.left, r.top + l.sy(8)),
+          r.width,
+          const Color(0xFFFFF9C4),
+          18 * l.scale,
+          FontWeight.w900,
+          align: TextAlign.center,
+        );
+        index++;
+      }
+    }
+    _drawWorldNumberStones(canvas, l, scene);
+    _drawDraggedWorldItem(canvas, l, scene);
+  }
+
+  void _drawWorldLetterStones(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final itemById = {for (final item in scene.items) item.id: item};
+    for (final entry in l.worldItemRects(scene).entries) {
+      if (draggingWorldItemId == entry.key) continue;
+      final item = itemById[entry.key];
+      if (item == null) continue;
+      canvas.drawOval(entry.value, Paint()..color = const Color(0xFF3E2108));
+      canvas.drawOval(
+        entry.value.deflate(5 * l.scale),
+        Paint()..color = const Color(0xFF5D4037),
+      );
+      _drawText(
+        canvas,
+        item.label,
+        Offset(entry.value.left, entry.value.top + 14 * l.scale),
+        entry.value.width,
+        const Color(0xFFFFD700),
+        20 * l.scale,
+        FontWeight.w800,
+        align: TextAlign.center,
+      );
+    }
+  }
+
+  void _drawWorldNumberStones(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final itemById = {for (final item in scene.items) item.id: item};
+    for (final entry in l.worldItemRects(scene).entries) {
+      if (draggingWorldItemId == entry.key) continue;
+      final item = itemById[entry.key];
+      if (item == null) continue;
+      canvas.drawCircle(
+        entry.value.center,
+        l.numberStoneRadius,
+        Paint()..color = const Color(0xFF2D1500),
+      );
+      canvas.drawCircle(
+        entry.value.center,
+        math.max(l.scale * 14, l.numberStoneRadius - 4 * l.scale),
+        Paint()..color = const Color(0xFF4A2E00),
+      );
+      _drawText(
+        canvas,
+        item.label,
+        Offset(
+          entry.value.center.dx - l.sx(14),
+          entry.value.center.dy - l.sy(9),
+        ),
+        l.sx(28),
+        const Color(0xFF7A5A40),
+        13 * l.scale,
+        FontWeight.w800,
+        align: TextAlign.center,
+      );
+    }
+  }
+
+  void _drawTapObjectsExercise(
+    Canvas canvas,
+    Size size,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
+    final itemById = {for (final item in scene.items) item.id: item};
+    for (final entry in l.worldItemRects(scene).entries) {
+      final item = itemById[entry.key];
+      if (item == null) continue;
+      final selected = currentAnswer?.toString() == item.answerValue.toString();
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(entry.value, Radius.circular(8 * l.scale)),
+        Paint()..color = const Color(0xFF3E2108),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          entry.value.deflate(l.sx(4)),
+          Radius.circular(6 * l.scale),
+        ),
+        Paint()
+          ..color = selected
+              ? const Color(0xFF6D3B17)
+              : const Color(0xFF5D4037),
+      );
+      _drawText(
+        canvas,
+        item.label,
+        Offset(entry.value.left + l.sx(5), entry.value.top + l.sy(9)),
+        entry.value.width - l.sx(10),
+        selected ? const Color(0xFFFFD700) : const Color(0xFFE8D5A8),
+        12 * l.scale,
+        FontWeight.w800,
+        align: TextAlign.center,
+      );
+    }
+  }
+
+  void _drawDraggedWorldItem(
+    Canvas canvas,
+    _ForestQuestLayout l,
+    WorldTaskSceneDefinition scene,
+  ) {
+    final itemId = draggingWorldItemId;
+    final position = draggingWorldPosition;
+    if (itemId == null || position == null) return;
+    WorldTaskSceneItem? item;
+    for (final entry in scene.items) {
+      if (entry.id == itemId) {
+        item = entry;
+        break;
+      }
+    }
+    if (item == null) return;
+    if (item.role == 'apple') {
+      _drawApple(canvas, position, l.scale * 1.12);
+      return;
+    }
+    canvas.drawCircle(
+      position,
+      22 * l.scale,
+      Paint()..color = const Color(0xCC3E2108),
+    );
+    _drawText(
+      canvas,
+      item.label,
+      Offset(position.dx - l.sx(18), position.dy - l.sy(11)),
+      l.sx(36),
+      const Color(0xFFFFD700),
+      16 * l.scale,
+      FontWeight.w900,
+      align: TextAlign.center,
+    );
+  }
+
+  void _drawApple(Canvas canvas, Offset center, double scale) {
+    canvas.drawCircle(
+      center,
+      10 * scale,
+      Paint()..color = const Color(0xFFE53935),
+    );
+    canvas.drawCircle(
+      center.translate(4 * scale, -3 * scale),
+      5 * scale,
+      Paint()..color = const Color(0xFFFF7043),
+    );
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: center.translate(0, -12 * scale),
+        width: 3 * scale,
+        height: 8 * scale,
+      ),
+      Paint()..color = const Color(0xFF3E2108),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center.translate(7 * scale, -13 * scale),
+        width: 10 * scale,
+        height: 5 * scale,
+      ),
+      Paint()..color = const Color(0xFF4E8038),
+    );
   }
 
   void _drawSyllableExercise(Canvas canvas, Size size, TaskModel task) {
@@ -1514,7 +2362,49 @@ class ForestQuestPainter extends CustomPainter {
   }
 
   void _drawNumberExercise(Canvas canvas, Size size, TaskModel task) {
+    if (forestQuestNumberTaskUsesTextChoices(task)) {
+      _drawTaskTablet(canvas, size);
+      _drawTapAnswerStones(canvas, size, forestQuestNumberTextChoices(task));
+      return;
+    }
     _drawNumberStones(canvas, size, _numberChoices(task));
+  }
+
+  void _drawTapAnswerStones(Canvas canvas, Size size, List<dynamic> choices) {
+    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
+    for (final entry in l.answerStones(choices).entries) {
+      final selected = currentAnswer?.toString() == entry.key.toString();
+      Color inner = selected
+          ? const Color(0xFF6D3B17)
+          : const Color(0xFF5D4037);
+      Color text = selected ? const Color(0xFFFFD700) : const Color(0xFFE8D5A8);
+      if (lastCorrect != null && selected) {
+        inner = lastCorrect!
+            ? const Color(0xFF1B4D1B)
+            : const Color(0xFF4A1010);
+        text = lastCorrect! ? const Color(0xFFA5D6A7) : const Color(0xFFFF5252);
+      }
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(entry.value, Radius.circular(8 * l.scale)),
+        Paint()..color = const Color(0xFF3E2108),
+      );
+      final innerRect = entry.value.deflate(l.sx(4));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(innerRect, Radius.circular(6 * l.scale)),
+        Paint()..color = inner,
+      );
+      _drawText(
+        canvas,
+        entry.key.toString(),
+        Offset(innerRect.left + l.sx(5), innerRect.top + l.sy(9)),
+        innerRect.width - l.sx(10),
+        text,
+        12 * l.scale,
+        FontWeight.w800,
+        align: TextAlign.center,
+        maxLines: 1,
+      );
+    }
   }
 
   void _drawNumberStones(Canvas canvas, Size size, List<int> choices) {
@@ -1568,7 +2458,10 @@ class ForestQuestPainter extends CustomPainter {
     });
     final lakeY = l.sceneY(0.48);
     for (var i = 0; i < 4; i++) {
-      final p = Offset(l.sx(76 + i * 43), lakeY + (i.isEven ? -7 : 7) * l.scale);
+      final p = Offset(
+        l.sx(76 + i * 43),
+        lakeY + (i.isEven ? -7 : 7) * l.scale,
+      );
       canvas.drawOval(
         Rect.fromCenter(
           center: p.translate(0, 4 * l.scale),
@@ -1578,7 +2471,11 @@ class ForestQuestPainter extends CustomPainter {
         Paint()..color = const Color(0x55000000),
       );
       if (i == 3 && currentAnswer == null) {
-        _drawDashedOval(canvas, Rect.fromCenter(center: p, width: 34 * l.scale, height: 18 * l.scale), l.scale);
+        _drawDashedOval(
+          canvas,
+          Rect.fromCenter(center: p, width: 34 * l.scale, height: 18 * l.scale),
+          l.scale,
+        );
       } else {
         canvas.drawOval(
           Rect.fromCenter(center: p, width: 34 * l.scale, height: 18 * l.scale),
@@ -1612,7 +2509,10 @@ class ForestQuestPainter extends CustomPainter {
         final glow = isWrong
             ? const Color(0x99B40000)
             : Color.fromRGBO(255, 215, 0, isCorrect ? 0.55 : 0.35);
-        canvas.drawOval(entry.value.inflate(7 * l.scale), Paint()..color = glow);
+        canvas.drawOval(
+          entry.value.inflate(7 * l.scale),
+          Paint()..color = glow,
+        );
       }
       canvas.drawOval(entry.value, Paint()..color = const Color(0xFF3E2108));
       canvas.drawOval(
@@ -1638,7 +2538,10 @@ class ForestQuestPainter extends CustomPainter {
       final selected = currentAnswer?.toString() == entry.key.toString();
       canvas.drawRRect(
         RRect.fromRectAndRadius(entry.value, Radius.circular(8 * l.scale)),
-        Paint()..color = selected ? const Color(0xFFFF8F00) : const Color(0xFF3E2108),
+        Paint()
+          ..color = selected
+              ? const Color(0xFFFF8F00)
+              : const Color(0xFF3E2108),
       );
       final inner = entry.value.deflate(4 * l.scale);
       canvas.drawRRect(
@@ -1663,7 +2566,10 @@ class ForestQuestPainter extends CustomPainter {
       Paint()..color = const Color(0xFF1B5E20),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(r.deflate(3 * l.scale), Radius.circular(6 * l.scale)),
+      RRect.fromRectAndRadius(
+        r.deflate(3 * l.scale),
+        Radius.circular(6 * l.scale),
+      ),
       Paint()..color = const Color(0xFF2E7D32),
     );
     _drawText(
@@ -1685,59 +2591,6 @@ class ForestQuestPainter extends CustomPainter {
       ..strokeWidth = 2 * sc;
     for (var a = 0.0; a < math.pi * 2; a += math.pi / 5) {
       canvas.drawArc(rect, a, math.pi / 10, false, paint);
-    }
-  }
-
-  void _drawAnswerStones(
-    Canvas canvas,
-    Size size,
-    List<dynamic> choices, {
-    bool symbols = false,
-  }) {
-    final l = _ForestQuestLayout(size, bottomInset, hintText, motorMode);
-    for (final entry in l.answerStones(choices).entries) {
-      final selected = currentAnswer == entry.key;
-      Color inner = selected
-          ? const Color(0xFF6D3B17)
-          : const Color(0xFF5D4037);
-      Color text = selected ? const Color(0xFFFFD700) : const Color(0xFFE8D5A8);
-      if (lastCorrect != null && selected) {
-        inner = lastCorrect!
-            ? const Color(0xFF1B4D1B)
-            : const Color(0xFF4A1010);
-        text = lastCorrect! ? const Color(0xFFA5D6A7) : const Color(0xFFFF5252);
-      }
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(entry.value, Radius.circular(8 * l.scale)),
-        Paint()..color = const Color(0xFF3E2108),
-      );
-      final innerRect = entry.value.deflate(l.sx(4));
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(innerRect, Radius.circular(6 * l.scale)),
-        Paint()..color = inner,
-      );
-      if (symbols) {
-        _drawSymbol(
-          canvas,
-          l,
-          entry.key.toString(),
-          innerRect.center,
-          l.scale * 0.7,
-          text,
-        );
-      } else {
-        _drawText(
-          canvas,
-          entry.key.toString(),
-          Offset(innerRect.left + l.sx(5), innerRect.top + l.sy(9)),
-          innerRect.width - l.sx(10),
-          text,
-          12 * l.scale,
-          FontWeight.w800,
-          align: TextAlign.center,
-          maxLines: 1,
-        );
-      }
     }
   }
 
@@ -1843,10 +2696,7 @@ class ForestQuestPainter extends CustomPainter {
           center.dy + 6 * l.scale,
         )
         ..close();
-      canvas.drawPath(
-        path,
-        Paint()..color = const Color(0xB35A8A5A),
-      );
+      canvas.drawPath(path, Paint()..color = const Color(0xB35A8A5A));
       canvas.drawLine(
         center.translate(-7 * l.scale, 5 * l.scale),
         center.translate(8 * l.scale, -7 * l.scale),
@@ -1910,7 +2760,13 @@ class ForestQuestPainter extends CustomPainter {
     }
   }
 
-  void _drawFino(Canvas canvas, double cx, double cy, double scale, {FinoStyle? style}) {
+  void _drawFino(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double scale, {
+    FinoStyle? style,
+  }) {
     final effectiveStyle = style ?? finoStyle ?? FinoStyle.forStage(0);
     final bodyScale = scale * effectiveStyle.bodyScaleModifier;
     canvas.save();
@@ -2013,8 +2869,16 @@ class ForestQuestPainter extends CustomPainter {
     }
     canvas.restore();
     final eyePaint = Paint()..color = const Color(0xFF1A1A1A);
-    canvas.drawCircle(Offset(-4 * bodyScale, -9 * bodyScale), 2.5 * bodyScale, eyePaint);
-    canvas.drawCircle(Offset(4 * bodyScale, -9 * bodyScale), 2.5 * bodyScale, eyePaint);
+    canvas.drawCircle(
+      Offset(-4 * bodyScale, -9 * bodyScale),
+      2.5 * bodyScale,
+      eyePaint,
+    );
+    canvas.drawCircle(
+      Offset(4 * bodyScale, -9 * bodyScale),
+      2.5 * bodyScale,
+      eyePaint,
+    );
     canvas.drawCircle(
       Offset(-3 * scale, -10 * scale),
       scale,
@@ -2055,10 +2919,18 @@ class ForestQuestPainter extends CustomPainter {
           width: 31 * scale,
           height: 48 * scale,
         ),
-        Paint()..color = Colors.white.withOpacity(0.72),
+        Paint()..color = Colors.white.withValues(alpha: 0.72),
       );
-      canvas.drawCircle(Offset(-5 * scale, -7 * scale), 2 * scale, Paint()..color = Colors.black);
-      canvas.drawCircle(Offset(5 * scale, -7 * scale), 2 * scale, Paint()..color = Colors.black);
+      canvas.drawCircle(
+        Offset(-5 * scale, -7 * scale),
+        2 * scale,
+        Paint()..color = Colors.black,
+      );
+      canvas.drawCircle(
+        Offset(5 * scale, -7 * scale),
+        2 * scale,
+        Paint()..color = Colors.black,
+      );
     }
     canvas.restore();
   }
@@ -2227,8 +3099,18 @@ class ForestQuestPainter extends CustomPainter {
       canvas.drawPath(
         Path()
           ..moveTo(cx + 16.5 * scale, cy - 20 * scale)
-          ..quadraticBezierTo(cx + 22 * scale, cy - 14 * scale, cx + 16.5 * scale, cy - 10 * scale)
-          ..quadraticBezierTo(cx + 11 * scale, cy - 14 * scale, cx + 16.5 * scale, cy - 20 * scale),
+          ..quadraticBezierTo(
+            cx + 22 * scale,
+            cy - 14 * scale,
+            cx + 16.5 * scale,
+            cy - 10 * scale,
+          )
+          ..quadraticBezierTo(
+            cx + 11 * scale,
+            cy - 14 * scale,
+            cx + 16.5 * scale,
+            cy - 20 * scale,
+          ),
         Paint()..color = const Color(0xFFFF8F00),
       );
     }
@@ -2288,6 +3170,14 @@ class ForestQuestPainter extends CustomPainter {
     return oldDelegate.currentAnswer != currentAnswer ||
         oldDelegate.syllableCount != syllableCount ||
         oldDelegate.task != task ||
+        oldDelegate.sceneDefinition?.interactionType !=
+            sceneDefinition?.interactionType ||
+        oldDelegate.sceneDefinition?.sceneRole != sceneDefinition?.sceneRole ||
+        oldDelegate.draggingWorldItemId != draggingWorldItemId ||
+        oldDelegate.draggingWorldPosition != draggingWorldPosition ||
+        oldDelegate.placedWorldItemIds.length != placedWorldItemIds.length ||
+        !oldDelegate.placedWorldItemIds.containsAll(placedWorldItemIds) ||
+        !placedWorldItemIds.containsAll(oldDelegate.placedWorldItemIds) ||
         oldDelegate.hintText != hintText ||
         oldDelegate.lastCorrect != lastCorrect ||
         oldDelegate.brummTapT != brummTapT ||
